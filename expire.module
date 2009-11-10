@@ -1,0 +1,386 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Provides logic for page cache expiration
+ */
+
+define('EXPIRE_FLUSH_NODE_TERMS', TRUE);
+define('EXPIRE_FLUSH_MENU_ITEMS', 1);
+define('EXPIRE_FLUSH_CCK_REFERENCES', TRUE);
+
+
+/**
+ * Implementation of hook_comment(). Acts on comment modification.
+ */
+function expire_comment($comment, $op) {
+
+  switch ($op) {
+    case 'insert':
+    case 'update':
+      // Expire the relevant node page from the static page cache to prevent serving stale content:
+      if (!empty($comment['nid'])) {
+        $node = node_load($comment['nid']);
+        $node->nid = $comment['nid'];
+        expire_node($node);
+      }
+      break;
+    case 'publish':
+    case 'unpublish':
+    case 'delete':
+      if (!empty($comment->nid)) {
+        $node = node_load($comment->nid);
+        $node->nid = $comment->nid;
+        expire_node($node);
+      }
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_nodeapi(). Acts on nodes defined by other modules.
+ */
+function expire_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
+
+  switch ($op) {
+    case 'insert':
+      expire_node($node);
+      break;
+    case 'update':
+      expire_node($node);
+      break;
+    case 'delete':
+      expire_node($node);
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_votingapi_insert().
+ *
+ * @param $votes
+ *  array of votes
+ */
+function expire_votingapi_insert($votes) {
+  if (!BOOST_ENABLED) return;
+
+  foreach ($votes as $vote) {
+    $node = node_load($vote['content_id']);
+    $node->nid = $vote['content_id'];
+    expire_node($node);
+  }
+}
+
+/**
+ * Implementation of hook_votingapi_delete().
+ *
+ * @param $votes
+ *  array of votes
+ */
+function expire_votingapi_delete($votes) {
+  if (!BOOST_ENABLED) return;
+
+  foreach ($votes as $vote) {
+    $node = node_load($vote['content_id']);
+    $node->nid = $vote['content_id'];
+    boost_expire_node($node);
+  }
+}
+
+/**
+ * Implementation of hook_user(). Acts on user account actions.
+ */
+function expire_user($op, &$edit, &$account, $category = NULL) {
+
+  global $user;
+  switch ($op) {
+    case 'delete':
+      // Expire the relevant user page from the static page cache to prevent serving stale content:
+      if (!empty($account->uid)) {
+        $paths[] = 'user/' . $account->uid;
+        $flushed = expire_cache_derivative($paths, TRUE, TRUE);
+        watchdog('boost', 'expire_user() <br />User !uid was deleted resulting in !flushed pages being expired from the cache',  array('!uid' => $account->uid, '!flushed' => $flushed));
+      }
+      break;
+  }
+}
+
+/**
+ * Expires a node from the cache; including related pages.
+ *
+ * Expires front page if promoted, taxonomy terms,
+ *
+ * @param $node
+ *  node object
+ * @param $nid
+ *  node id
+ */
+function expire_node($node) {
+  $data = array();
+  $paths = array();
+
+  // Check node object
+  if (empty($node->nid)) {
+    return FALSE;
+  }
+
+  // Expire this node
+  $paths['node'] = 'node/' . $node->nid;
+
+  // If promoted to front page, expire front page
+  if ($node->promote == 1) {
+    $paths['front'] = '<front>';
+  }
+
+  // Get taxonomy terms and flush
+  if (module_exists('taxonomy') && EXPIRE_FLUSH_NODE_TERMS) {
+    $tids = boost_taxonomy_node_get_tids($node->nid);
+    $filenames = array();
+    foreach ($tids as $tid) {
+      if (is_int($tid)) {
+        $paths['term' . $tid] = 'taxonomy/term/' . $tid;
+      }
+    }
+  }
+
+  // Get menu and flush related items in the menu.
+  if (EXPIRE_FLUSH_MENU_ITEMS !=0) {
+    if (!isset($node->menu['menu_name'])) {
+      menu_nodeapi($node, 'prepare');
+    }
+    $menu = menu_tree_all_data($node->menu['menu_name']);
+    if (EXPIRE_FLUSH_MENU_ITEMS == 1) {
+      $links = expire_get_menu_structure($menu, FALSE, 'node/' . $node->nid);
+    }
+    elseif (EXPIRE_FLUSH_MENU_ITEMS == 2) {
+      $links = expire_get_menu_structure($menu);
+    }
+    $paths = array_merge($links, $paths);
+  }
+
+  // Get CCK References and flush.
+  if (EXPIRE_FLUSH_CCK_REFERENCES && module_exists('nodereference')) {
+    $nids = array();
+    $type = content_types($node->type);
+    if ($type) {
+      foreach ($type['fields'] as $field) {
+        // Add referenced nodes to nids. This will clean up nodereferrer fields
+        // when the referencing node is updated.
+        if ($field['type'] == 'nodereference') {
+          $node_field = isset($node->$field['field_name']) ? $node->$field['field_name'] : array();
+          foreach ($node_field as $delta => $item) {
+            $nids[$item['nid']] = $item['nid'];
+          }
+        }
+      }
+      foreach ($nids as $nid) {
+        if (is_int($nid)) {
+          $paths['reference' . $nid] = 'node/' . $nid;
+        }
+      }
+    }
+
+    // Get CCK references pointing to this node and flush.
+    if (module_exists('nodereferrer')) {
+      $nids = nodereferrer_referrers($node->nid);
+      foreach ($nids as $nid) {
+        if (is_int($nid['nid'])) {
+          $paths['referrer' . $nid['nid']] = 'node/' . $nid['nid'];
+        }
+      }
+    }
+  }
+
+  // Flush array of paths
+  if (!empty($paths)) {
+    $flushed = expire_cache_derivative($paths, TRUE);
+    watchdog('expire', 'expire_node() <br />Node !nid was flushed resulting in !flushed pages being expired from the cache',  array('!nid' => $node->nid, '!flushed' => $flushed));
+  }
+}
+
+/**
+ * Finds parent, siblings and children of the menu item. UGLY CODE...
+ *
+ * @param array $menu
+ *  Output from menu_tree_all_data()
+ * @param bool $found
+ *  Signal for when the needle was found in the menu array.
+ *  Set TRUE to get entire menu
+ * @param string $needle
+ *  Name of menu link. Example 'node/21'
+ * @param bool $first
+ *  Keep track of the first call; this is a recursive function.
+ * @param bool &$found_global
+ *  Used to signal the parent item was found in one of it's children
+ * @param bool &$menu_out
+ *  Output array of parent, siblings and children menu links
+ *
+ * TODO: Use page_callback and page_arguments instead of link_path.
+ *  Can use boost_cache_expire_router() then.
+ */
+function expire_get_menu_structure($menu, $found = TRUE, $needle = '', $first = TRUE, &$found_global = FALSE, &$menu_out = array()) {
+  $found_global = FALSE;
+  // Get Siblings
+  foreach ($menu as $item) {
+    if ($item['link']['hidden'] == 0 && $item['link']['page_callback'] != '' && ($item['link']['link_path'] == $needle || $found)) {
+      $menu_out[] = $item['link']['link_path'];
+      $found = TRUE;
+    }
+  }
+  // Get Children
+  foreach ($menu as $item) {
+    if ($item['link']['hidden'] != 0) {
+      continue;
+    }
+    if ($item['link']['page_callback'] != '' && ($item['link']['link_path'] == $needle || $found)) {
+      $menu_out[] = $item['link']['link_path'];
+      $found = TRUE;
+    }
+    // Get Grandkids
+    if (!empty($item['below'])) {
+      $sub_menu = array();
+      foreach ($item['below'] as $below) {
+        if ($below['link']['hidden'] == 0) {
+          $sub_menu[] = $below;
+        }
+      }
+      expire_get_menu_structure($sub_menu, $needle, $found, FALSE, $found_global, $menu_out);
+      $structure[$item['link']['link_path']][] = $sub;
+      if ($item['link']['page_callback'] != '' && $found_global) {
+        // Get Parent of kid
+        $menu_out[] = $item['link']['link_path'];
+      }
+    }
+    else {
+      $structure[$item['link']['link_path']] = '';
+    }
+  }
+
+  // Clean up
+  if (is_array($structure)) {
+    $structure = array_unique($structure);
+  }
+  $found_global = $found;
+  if ($first) {
+    $menu_out = array_unique($menu_out);
+    sort($menu_out);
+    return $menu_out;
+  }
+  else {
+    return $structure;
+  }
+}
+
+/**
+ * Return taxonomy terms given a nid.
+ *
+ * Needed because of a weird bug with CCK & node_load()
+ *  http://drupal.org/node/545922
+ */
+function expire_taxonomy_node_get_tids($nid) {
+  $vid = db_result(db_query('SELECT vid FROM {node} WHERE nid = %d', $nid));
+  $result = db_query(db_rewrite_sql('SELECT t.tid FROM {term_node} r INNER JOIN {term_data} t ON r.tid = t.tid INNER JOIN {vocabulary} v ON t.vid = v.vid WHERE r.vid = %d ORDER BY v.weight, t.weight, t.name', 't', 'tid'), $vid);
+  $tids = array();
+  while ($term = db_result($result)) {
+    $tids[] = $term;
+  }
+  return $tids;
+}
+
+/**
+ * Finds all possible paths/redirects/aliases given the root path.
+ *
+ * @param $paths
+ *   Array of current URLs
+ * @param $both
+ *   Expire database & file
+ * @param $force_flush
+ *   Override the settings and kill the file
+ */
+function expire_cache_derivative($paths, $both = FALSE, $force_flush = FALSE) {
+  global $base_path;
+  $expire = array();
+
+  if (empty($paths)) {
+    return FALSE;
+  }
+  foreach ($paths as $path) {
+    // Given path
+    $expire[] = $path;
+
+    // Special front page feed handling
+    if ($path == '' || $path == '<front>') {
+      $expire[] = 'rss.xml';
+    }
+
+    // Path alias
+    $path_alias = url($path, array('absolute' => FALSE));
+    if ($base_path != '/') {
+      $path_alias = implode('/', array_diff_assoc(array_filter(explode('/', $path_alias)), array_filter(explode('/', $base_path))));
+    }
+    $expire[] = $path_alias;
+
+    // Path redirects
+    if (module_exists('path_redirect')) {
+      $path_redirects = expire_path_redirect_load(array('redirect' => $path));
+      if (isset($path_redirects)) {
+        foreach ($path_redirects as $path_redirect) {
+          $expire[] = $path_redirect['path'];
+        }
+      }
+    }
+  }
+
+  // Expire cached files
+  $counter = 0;
+  if (empty($expire)) {
+    return FALSE;
+  }
+  $expire = array_unique($expire);
+  // Add on the url to these paths
+  $urls = array();
+  global $base_url;
+  foreach ($expire as $path) {
+    $urls[] = $base_url . '/' . $path;
+  }
+  watchdog('expire','<pre><tt>' .  print_r($urls, TRUE) . '</tt></pre>');
+  // hook_expire_cache
+  foreach (module_implements('expire_cache') as $module) {
+    module_invoke($module, 'expire_cache', $urls);
+  }
+  return count($urls);
+}
+
+/**
+ * Retrieve a specific URL redirect from the database.
+ * http://drupal.org/node/451790
+ *
+ * @param $where
+ *   Array containing 'redirect' => $path
+ */
+function expire_path_redirect_load($where = array(), $args = array(), $sort = array()) {
+  $redirects = array();
+  if (is_numeric($where)) {
+    $where = array('rid' => $where);
+  }
+
+  foreach ($where as $key => $value) {
+    if (is_string($key)) {
+      $args[] = $value;
+      $where[$key] = $key .' = '. (is_numeric($value) ? '%d' : "'%s'");
+    }
+  }
+
+  if ($where && $args) {
+    $sql = "SELECT * FROM {path_redirect} WHERE ". implode(' AND ', $where);
+    if ($sort) {
+      $sql .= ' ORDER BY '. implode(' ,', $sort);
+    }
+    $result = db_query($sql, $args);
+    while ($redirect = db_fetch_array($result)) {
+      $redirects[] = $redirect;
+    }
+    return $redirects;
+  }
+}
