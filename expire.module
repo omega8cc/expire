@@ -63,8 +63,6 @@ function expire_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
  *  array of votes
  */
 function expire_votingapi_insert($votes) {
-  if (!BOOST_ENABLED) return;
-
   foreach ($votes as $vote) {
     $node = node_load($vote['content_id']);
     $node->nid = $vote['content_id'];
@@ -79,12 +77,10 @@ function expire_votingapi_insert($votes) {
  *  array of votes
  */
 function expire_votingapi_delete($votes) {
-  if (!BOOST_ENABLED) return;
-
   foreach ($votes as $vote) {
     $node = node_load($vote['content_id']);
     $node->nid = $vote['content_id'];
-    boost_expire_node($node);
+    expire_node($node);
   }
 }
 
@@ -100,7 +96,7 @@ function expire_user($op, &$edit, &$account, $category = NULL) {
       if (!empty($account->uid)) {
         $paths[] = 'user/' . $account->uid;
         $flushed = expire_cache_derivative($paths, TRUE, TRUE);
-        watchdog('boost', 'expire_user() <br />User !uid was deleted resulting in !flushed pages being expired from the cache',  array('!uid' => $account->uid, '!flushed' => $flushed));
+        watchdog('expire', 'User !uid was deleted resulting in !flushed pages being expired from the cache',  array('!uid' => $account->uid, '!flushed' => $flushed));
       }
       break;
   }
@@ -135,7 +131,7 @@ function expire_node($node) {
 
   // Get taxonomy terms and flush
   if (module_exists('taxonomy') && EXPIRE_FLUSH_NODE_TERMS) {
-    $tids = boost_taxonomy_node_get_tids($node->nid);
+    $tids = expire_taxonomy_node_get_tids($node->nid);
     $filenames = array();
     foreach ($tids as $tid) {
       if (is_int($tid)) {
