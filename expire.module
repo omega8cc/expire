@@ -6,16 +6,16 @@
  * Provides logic for page cache expiration
  */
 
+// Defaults used if variable_get is not set.
 define('EXPIRE_FLUSH_NODE_TERMS', TRUE);
 define('EXPIRE_FLUSH_MENU_ITEMS', 1);
 define('EXPIRE_FLUSH_CCK_REFERENCES', TRUE);
-
+define('EXPIRE_FLUSH_FRONT', TRUE);
 
 /**
  * Implementation of hook_comment(). Acts on comment modification.
  */
 function expire_comment($comment, $op) {
-
   switch ($op) {
     case 'insert':
     case 'update':
@@ -42,7 +42,6 @@ function expire_comment($comment, $op) {
  * Implementation of hook_nodeapi(). Acts on nodes defined by other modules.
  */
 function expire_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
-
   switch ($op) {
     case 'insert':
       expire_node($node);
@@ -88,14 +87,12 @@ function expire_votingapi_delete($votes) {
  * Implementation of hook_user(). Acts on user account actions.
  */
 function expire_user($op, &$edit, &$account, $category = NULL) {
-
-  global $user;
   switch ($op) {
     case 'delete':
       // Expire the relevant user page from the static page cache to prevent serving stale content:
       if (!empty($account->uid)) {
         $paths[] = 'user/' . $account->uid;
-        $flushed = expire_cache_derivative($paths, TRUE, TRUE);
+        $flushed = expire_cache_derivative($account, $paths, TRUE, TRUE);
         watchdog('expire', 'User !uid was deleted resulting in !flushed pages being expired from the cache',  array('!uid' => $account->uid, '!flushed' => $flushed));
       }
       break;
@@ -109,11 +106,8 @@ function expire_user($op, &$edit, &$account, $category = NULL) {
  *
  * @param $node
  *  node object
- * @param $nid
- *  node id
  */
 function expire_node($node) {
-  $data = array();
   $paths = array();
 
   // Check node object
@@ -125,13 +119,24 @@ function expire_node($node) {
   $paths['node'] = 'node/' . $node->nid;
 
   // If promoted to front page, expire front page
-  if ($node->promote == 1) {
+  if (variable_get('expire_flush_front', EXPIRE_FLUSH_FRONT) && $node->promote == 1) {
     $paths['front'] = '<front>';
   }
 
   // Get taxonomy terms and flush
-  if (module_exists('taxonomy') && EXPIRE_FLUSH_NODE_TERMS) {
+  if (module_exists('taxonomy') && variable_get('expire_flush_node_terms', EXPIRE_FLUSH_NODE_TERMS)) {
+    // Get old terms from DB
     $tids = expire_taxonomy_node_get_tids($node->nid);
+    // Get new terms from node object
+    if (!empty($node->taxonomy)) {
+      foreach ($node->taxonomy as $vocab) {
+        if (is_array($vocab)) {
+          foreach ($vocab as $term) {
+            $tids[$term] = $term;
+          }
+        }
+      }
+    }
     $filenames = array();
     foreach ($tids as $tid) {
       if (is_int($tid)) {
@@ -141,22 +146,26 @@ function expire_node($node) {
   }
 
   // Get menu and flush related items in the menu.
-  if (EXPIRE_FLUSH_MENU_ITEMS !=0) {
+  if (variable_get('expire_flush_menu_items', EXPIRE_FLUSH_MENU_ITEMS) !=0) {
     if (!isset($node->menu['menu_name'])) {
       menu_nodeapi($node, 'prepare');
     }
     $menu = menu_tree_all_data($node->menu['menu_name']);
-    if (EXPIRE_FLUSH_MENU_ITEMS == 1) {
-      $links = expire_get_menu_structure($menu, FALSE, 'node/' . $node->nid);
+    $tempa = NULL;
+    $tempb = NULL;
+    if (variable_get('expire_flush_menu_items', EXPIRE_FLUSH_MENU_ITEMS) == 1) {
+      $links = expire_get_menu_structure($menu, FALSE, 'node/' . $node->nid, NULL, $tempa, $tempb);
     }
-    elseif (EXPIRE_FLUSH_MENU_ITEMS == 2) {
-      $links = expire_get_menu_structure($menu);
+    elseif (variable_get('expire_flush_menu_items', EXPIRE_FLUSH_MENU_ITEMS) == 2) {
+      $links = expire_get_menu_structure($menu, NULL, NULL, NULL, $tempa, $tempb);
     }
+    unset($tempa);
+    unset($tempb);
     $paths = array_merge($links, $paths);
   }
 
   // Get CCK References and flush.
-  if (EXPIRE_FLUSH_CCK_REFERENCES && module_exists('nodereference')) {
+  if (variable_get('expire_flush_cck_references', EXPIRE_FLUSH_CCK_REFERENCES) && module_exists('nodereference')) {
     $nids = array();
     $type = content_types($node->type);
     if ($type) {
@@ -166,13 +175,10 @@ function expire_node($node) {
         if ($field['type'] == 'nodereference') {
           $node_field = isset($node->$field['field_name']) ? $node->$field['field_name'] : array();
           foreach ($node_field as $delta => $item) {
-            $nids[$item['nid']] = $item['nid'];
+            if (is_int($item['nid'])) {
+              $paths['reference' . $nid] = 'node/' . $item['nid'];
+            }
           }
-        }
-      }
-      foreach ($nids as $nid) {
-        if (is_int($nid)) {
-          $paths['reference' . $nid] = 'node/' . $nid;
         }
       }
     }
@@ -190,7 +196,7 @@ function expire_node($node) {
 
   // Flush array of paths
   if (!empty($paths)) {
-    $flushed = expire_cache_derivative($paths, TRUE);
+    $flushed = expire_cache_derivative($node, $paths, TRUE);
     watchdog('expire', 'expire_node() <br />Node !nid was flushed resulting in !flushed pages being expired from the cache',  array('!nid' => $node->nid, '!flushed' => $flushed));
   }
 }
@@ -211,12 +217,15 @@ function expire_node($node) {
  *  Used to signal the parent item was found in one of it's children
  * @param bool &$menu_out
  *  Output array of parent, siblings and children menu links
- *
- * TODO: Use page_callback and page_arguments instead of link_path.
- *  Can use boost_cache_expire_router() then.
  */
-function expire_get_menu_structure($menu, $found = TRUE, $needle = '', $first = TRUE, &$found_global = FALSE, &$menu_out = array()) {
+function expire_get_menu_structure($menu, $found, $needle, $first, &$found_global, &$menu_out) {
+  // Set Defaults
+  $found = !is_null($found) ? $found : TRUE;
+  $needle = !is_null($needle) ? $needle : '';
+  $first = !is_null($first) ? $first : TRUE;
   $found_global = FALSE;
+  $menu_out = !is_null($menu_out) ? $menu_out : array();
+
   // Get Siblings
   foreach ($menu as $item) {
     if ($item['link']['hidden'] == 0 && $item['link']['page_callback'] != '' && ($item['link']['link_path'] == $needle || $found)) {
@@ -254,14 +263,19 @@ function expire_get_menu_structure($menu, $found = TRUE, $needle = '', $first = 
   }
 
   // Clean up
-  if (is_array($structure)) {
+  if (isset($structure) && is_array($structure)) {
     $structure = array_unique($structure);
   }
   $found_global = $found;
   if ($first) {
-    $menu_out = array_unique($menu_out);
-    sort($menu_out);
-    return $menu_out;
+    if (isset($menu_out) && is_array($menu_out)) {
+      $menu_out = array_unique($menu_out);
+      sort($menu_out);
+      return $menu_out;
+    }
+    else {
+      return array();
+    }
   }
   else {
     return $structure;
@@ -294,7 +308,7 @@ function expire_taxonomy_node_get_tids($nid) {
  * @param $force_flush
  *   Override the settings and kill the file
  */
-function expire_cache_derivative($paths, $both = FALSE, $force_flush = FALSE) {
+function expire_cache_derivative(&$node, $paths, $both = FALSE, $force_flush = FALSE) {
   global $base_path;
   $expire = array();
 
@@ -337,10 +351,14 @@ function expire_cache_derivative($paths, $both = FALSE, $force_flush = FALSE) {
   // Add on the url to these paths
   $urls = array();
   global $base_url;
-  foreach ($expire as $path) {
-    $urls[] = $base_url . '/' . $path;
+  foreach (expire_get_base_urls($node) as $domain_id) {
+    foreach ($domain_id as $base) {
+      foreach ($expire as $path) {
+        $urls[] = $base . $path;
+      }
+    }
   }
-  watchdog('expire','<pre><tt>' .  print_r($urls, TRUE) . '</tt></pre>');
+  watchdog('expire', 'input: !paths <br /> output: !urls', array('!paths' => expire_print_r($paths), '!urls' => expire_print_r($urls)));
   // hook_expire_cache
   foreach (module_implements('expire_cache') as $module) {
     module_invoke($module, 'expire_cache', $urls);
@@ -379,4 +397,91 @@ function expire_path_redirect_load($where = array(), $args = array(), $sort = ar
     }
     return $redirects;
   }
+}
+
+/**
+ * Simple print_r to html function
+ *
+ * @param $data
+ *
+ * @return string
+ *   print_r contents in nicely formatted html
+ */
+function expire_print_r($data) {
+  return str_replace('    ', '&nbsp;&nbsp;&nbsp;&nbsp;', nl2br(htmlentities(print_r($data, TRUE))));
+}
+
+/**
+ * Get all base url's where this node can appear. Domain access support.
+ *
+ * @param $node
+ *   node object
+ * @return array
+ *   array(0 => array($base_url . '/'))
+ */
+function expire_get_base_urls(&$node) {
+  global $base_url, $base_path;
+
+  // Get list of URL's if using domain access
+  $base_urls = array();
+  $domains = array();
+  if (module_exists('domain') && isset($node->domains)) {
+    // Get domains from node/user object
+    foreach ($node->domains as $key => $domain_id) {
+      if ($key != $domain_id) {
+        continue;
+      }
+      $domains[$domain_id] = $domain_id;
+    }
+    // Get domains from database
+    foreach (expire_get_domains($node) as $domain_id) {
+      $domains[$domain_id] = $domain_id;
+    }
+    // Get aliases and set base url
+    foreach ($domains as $domain_id) {
+      $domain = domain_lookup($domain_id);
+      if ($domain['valid'] == 1) {
+        if (isset($domain['path'])) {
+          $base_urls[$domain_id][] = $domain['path'];
+        }
+        foreach ($domain['aliases'] as $alias) {
+          if ($alias['redirect'] != 1) {
+            $temp_domain = array('scheme' => $domain['scheme'], 'subdomain' => $alias['pattern']);
+            $base_urls[$domain_id][] = domain_get_path($temp_domain);
+          }
+        }
+      }
+    }
+  }
+  else {
+    $base_urls[0][] = $base_url . '/';
+  }
+  return $base_urls;
+}
+
+/**
+ * Get domains the node is currently published to
+ *
+ * @param $node
+ *   node object
+ * @return array
+ *   array('$gid' => $gid)
+ */
+function expire_get_domains(&$node) {
+  $domains = array();
+  if ($node->nid) {
+    $result = db_query("SELECT gid FROM {domain_access} WHERE nid = %d", $node->nid);
+    while ($row = db_fetch_array($result)) {
+      $gid = $row['gid'];
+      $domains[$gid] = $gid;
+    }
+  }
+  elseif ($node->mail && $node->name) {
+    $result = db_query("SELECT domain_id FROM {domain_editor} WHERE uid = %d", $node->uid);
+    while ($row = db_fetch_array($result)) {
+      $gid = $row['domain_id'];
+      $domains[$gid] = $gid;
+    }
+  }
+  return $domains;
 }
