@@ -11,6 +11,7 @@ define('EXPIRE_FLUSH_NODE_TERMS', TRUE);
 define('EXPIRE_FLUSH_MENU_ITEMS', 1);
 define('EXPIRE_FLUSH_CCK_REFERENCES', TRUE);
 define('EXPIRE_FLUSH_FRONT', TRUE);
+define('EXPIRE_INCLUDE_BASE_URL', TRUE);
 
 /**
  * Implementation of hook_comment(). Acts on comment modification.
@@ -93,7 +94,10 @@ function expire_user($op, &$edit, &$account, $category = NULL) {
       if (!empty($account->uid)) {
         $paths[] = 'user/' . $account->uid;
         $flushed = expire_cache_derivative($account, $paths, TRUE, TRUE);
-        watchdog('expire', 'User !uid was deleted resulting in !flushed pages being expired from the cache',  array('!uid' => $account->uid, '!flushed' => $flushed));
+        watchdog('expire', 'User !uid was deleted resulting in !flushed pages being expired from the cache',  array(
+          '!uid' => $account->uid,
+          '!flushed' => $flushed,
+        ));
       }
       break;
   }
@@ -197,7 +201,10 @@ function expire_node($node) {
   // Flush array of paths
   if (!empty($paths)) {
     $flushed = expire_cache_derivative($node, $paths, TRUE);
-    watchdog('expire', 'expire_node() <br />Node !nid was flushed resulting in !flushed pages being expired from the cache',  array('!nid' => $node->nid, '!flushed' => $flushed));
+    watchdog('expire', 'Node !nid was flushed resulting in !flushed pages being expired from the cache',  array(
+      '!nid' => $node->nid,
+      '!flushed' => $flushed,
+    ));
   }
 }
 
@@ -343,7 +350,6 @@ function expire_cache_derivative(&$node, $paths, $both = FALSE, $force_flush = F
   }
 
   // Expire cached files
-  $counter = 0;
   if (empty($expire)) {
     return FALSE;
   }
@@ -351,18 +357,28 @@ function expire_cache_derivative(&$node, $paths, $both = FALSE, $force_flush = F
   // Add on the url to these paths
   $urls = array();
   global $base_url;
-  foreach (expire_get_base_urls($node) as $domain_id) {
-    foreach ($domain_id as $base) {
-      foreach ($expire as $path) {
-        $urls[] = $base . $path;
+  if (variable_get('expire_include_base_url', EXPIRE_INCLUDE_BASE_URL)) {
+    foreach (expire_get_base_urls($node) as $domain_id) {
+      foreach ($domain_id as $base) {
+        foreach ($expire as $path) {
+          $urls[] = $base . $path;
+        }
       }
     }
   }
-  watchdog('expire', 'input: !paths <br /> output: !urls', array('!paths' => expire_print_r($paths), '!urls' => expire_print_r($urls)));
+  else {
+    $urls = $expire;
+  }
   // hook_expire_cache
-  foreach (module_implements('expire_cache') as $module) {
+  $modules = module_implements('expire_cache');
+  foreach ($modules as $module) {
     module_invoke($module, 'expire_cache', $urls);
   }
+  watchdog('expire', 'Input: !paths <br /> Output: !urls <br /> Modules Using hook_expire_cache(): !modules', array(
+    '!paths' => expire_print_r($paths),
+    '!urls' => expire_print_r($urls),
+    '!modules' => expire_print_r($modules),
+  ));
   return count($urls);
 }
 
