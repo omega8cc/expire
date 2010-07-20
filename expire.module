@@ -17,16 +17,15 @@ define('EXPIRE_INCLUDE_BASE_URL', TRUE);
  * Implementation of hook_comment(). Acts on comment modification.
  */
 function expire_comment($comment, $op) {
+  // Convert array to object
+  if (is_array($comment)) {
+    $comment = (object)$comment;
+  }
+
+  // Expire the relevant node page from the static page cache to prevent serving stale content:
   switch ($op) {
     case 'insert':
     case 'update':
-      // Expire the relevant node page from the static page cache to prevent serving stale content:
-      if (!empty($comment['nid'])) {
-        $node = node_load($comment['nid']);
-        $node->nid = $comment['nid'];
-        expire_node($node);
-      }
-      break;
     case 'publish':
     case 'unpublish':
     case 'delete':
