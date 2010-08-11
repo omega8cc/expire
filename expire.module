@@ -457,10 +457,12 @@ function expire_get_base_urls(&$node) {
         if (isset($domain['path'])) {
           $base_urls[$domain_id][] = $domain['path'];
         }
-        foreach ($domain['aliases'] as $alias) {
-          if ($alias['redirect'] != 1) {
-            $temp_domain = array('scheme' => $domain['scheme'], 'subdomain' => $alias['pattern']);
-            $base_urls[$domain_id][] = domain_get_path($temp_domain);
+        if (is_array($domain['aliases'])) {
+          foreach ($domain['aliases'] as $alias) {
+            if ($alias['redirect'] != 1) {
+              $temp_domain = array('scheme' => $domain['scheme'], 'subdomain' => $alias['pattern']);
+              $base_urls[$domain_id][] = domain_get_path($temp_domain);
+            }
           }
         }
       }
