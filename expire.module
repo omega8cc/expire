@@ -142,7 +142,7 @@ function expire_node($node) {
     }
     $filenames = array();
     foreach ($tids as $tid) {
-      if (is_int($tid)) {
+      if (is_numeric($tid)) {
         $paths['term' . $tid] = 'taxonomy/term/' . $tid;
       }
     }
@@ -178,7 +178,7 @@ function expire_node($node) {
         if ($field['type'] == 'nodereference') {
           $node_field = isset($node->$field['field_name']) ? $node->$field['field_name'] : array();
           foreach ($node_field as $delta => $item) {
-            if (is_int($item['nid'])) {
+            if (is_numeric($item['nid'])) {
               $paths['reference' . $nid] = 'node/' . $item['nid'];
             }
           }
@@ -190,7 +190,7 @@ function expire_node($node) {
     if (module_exists('nodereferrer')) {
       $nids = nodereferrer_referrers($node->nid);
       foreach ($nids as $nid) {
-        if (is_int($nid['nid'])) {
+        if (is_numeric($nid['nid'])) {
           $paths['referrer' . $nid['nid']] = 'node/' . $nid['nid'];
         }
       }
