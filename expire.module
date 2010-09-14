@@ -325,6 +325,12 @@ function expire_cache_derivative(&$node, $paths, $both = FALSE, $force_flush = F
     // Given path
     $expire[] = $path;
 
+    // Add the empty front page path if this is the alias
+    if ($path == variable_get('site_frontpage', 'node')) {
+      $expire[] = '';
+      $expire[] = 'rss.xml';
+    }
+
     // Special front page feed handling
     if ($path == '' || $path == '<front>') {
       $expire[] = 'rss.xml';
