@@ -62,11 +62,7 @@ function expire_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
  *  array of votes
  */
 function expire_votingapi_insert($votes) {
-  foreach ($votes as $vote) {
-    $node = node_load($vote['content_id']);
-    $node->nid = $vote['content_id'];
-    expire_node($node);
-  }
+  _expire_votingapi($votes);
 }
 
 /**
@@ -76,10 +72,23 @@ function expire_votingapi_insert($votes) {
  *  array of votes
  */
 function expire_votingapi_delete($votes) {
+  _expire_votingapi($votes);
+}
+
+/**
+ * Common expiry logic for votingapi.
+ */
+function _expire_votingapi($votes) {
   foreach ($votes as $vote) {
-    $node = node_load($vote['content_id']);
-    $node->nid = $vote['content_id'];
-    expire_node($node);
+    if ($vote['content_type'] == 'comment') {
+      $nid = db_result(db_query('SELECT nid FROM {comments} WHERE cid = %d', $vote['content_id']));
+      $node = node_load($nid);
+      expire_node($node);
+    }
+    if ($vote['content_type'] == 'node') {
+      $node = node_load($vote['content_id']);
+      expire_node($node);
+    }
   }
 }
 
