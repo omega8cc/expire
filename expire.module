@@ -101,7 +101,7 @@ function expire_user($op, &$edit, &$account, $category = NULL) {
       // Expire the relevant user page from the static page cache to prevent serving stale content:
       if (!empty($account->uid)) {
         $paths[] = 'user/' . $account->uid;
-        $flushed = expire_cache_derivative($account, $paths, TRUE, TRUE);
+        $flushed = expire_cache_derivative($account, $paths);
         watchdog('expire', 'User !uid was deleted resulting in !flushed pages being expired from the cache',  array(
           '!uid' => $account->uid,
           '!flushed' => $flushed,
@@ -208,7 +208,7 @@ function expire_node($node) {
 
   // Flush array of paths
   if (!empty($paths)) {
-    $flushed = expire_cache_derivative($node, $paths, TRUE);
+    $flushed = expire_cache_derivative($node, $paths);
     watchdog('expire', 'Node !nid was flushed resulting in !flushed pages being expired from the cache',  array(
       '!nid' => $node->nid,
       '!flushed' => $flushed,
@@ -316,14 +316,12 @@ function expire_taxonomy_node_get_tids($nid) {
 /**
  * Finds all possible paths/redirects/aliases given the root path.
  *
+ * @param $node
+ *   node object
  * @param $paths
  *   Array of current URLs
- * @param $both
- *   Expire database & file
- * @param $force_flush
- *   Override the settings and kill the file
  */
-function expire_cache_derivative(&$node, $paths, $both = FALSE, $force_flush = FALSE) {
+function expire_cache_derivative(&$node, $paths) {
   global $base_path;
   $expire = array();
 
@@ -360,6 +358,9 @@ function expire_cache_derivative(&$node, $paths, $both = FALSE, $force_flush = F
       }
     }
   }
+
+  // Allow other modules to modify the list prior to expiring
+  drupal_alter('expire_cache', $expire, $node, $paths);
 
   // Expire cached files
   if (empty($expire)) {
