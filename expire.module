@@ -359,19 +359,18 @@ function expire_cache_derivative(&$node, $paths) {
   if (empty($paths)) {
     return FALSE;
   }
+  $site_frontpage = variable_get('site_frontpage', 'node');
   foreach ($paths as $path) {
-    // Given path
-    $expire[] = $path;
-
-    // Add the empty front page path if this is the alias
-    if ($path == variable_get('site_frontpage', 'node')) {
+    // Special front page handling
+    if ($path == $site_frontpage || $path == '' || $path == '<front>') {
       $expire[] = '';
       $expire[] = 'rss.xml';
+      $expire[] = $site_frontpage;
     }
 
-    // Special front page feed handling
-    if ($path == '' || $path == '<front>') {
-      $expire[] = 'rss.xml';
+    // Add given path
+    if ($path != '<front>') {
+      $expire[] = $path;
     }
 
     // Path alias
