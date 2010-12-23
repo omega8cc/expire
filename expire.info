@@ -1,6 +1,6 @@
 ; $Id$
-name = Cache Expiration
-description = Logic for expiring page caches
+name = "Cache Expiration"
+description = "Logic for expiring page caches"
 recommends[] = nodereferrer
-package = Performance and scalability
+package = "Performance and scalability"
 core = 6.x

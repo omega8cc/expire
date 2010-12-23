@@ -1,0 +1,25 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Install file for expire module
+ */
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function expire_uninstall() {
+  $vars = array(
+    'expire_flush_front',
+    'expire_flush_node_terms',
+    'expire_flush_menu_items',
+    'expire_flush_cck_references',
+    'expire_include_base_url',
+  );
+  foreach ($vars as $var) {
+    variable_del($var);
+  }
+  $t = get_t();
+  drupal_set_message($t('Removed Expire variables'));
+}
