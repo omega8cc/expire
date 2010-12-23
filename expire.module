@@ -139,6 +139,13 @@ function expire_node($node) {
   if (module_exists('taxonomy') && variable_get('expire_flush_node_terms', EXPIRE_FLUSH_NODE_TERMS)) {
     // Get old terms from DB
     $tids = expire_taxonomy_node_get_tids($node->nid);
+    // Get old terms from static variable
+    $terms = taxonomy_node_get_terms($node);
+    if (!empty($terms)) {
+      foreach ($terms as $term) {
+        $tids[$term->tid] = $term->tid;
+      }
+    }
     // Get new terms from node object
     if (!empty($node->taxonomy)) {
       foreach ($node->taxonomy as $vocab) {
@@ -152,7 +159,8 @@ function expire_node($node) {
     $filenames = array();
     foreach ($tids as $tid) {
       if (is_numeric($tid)) {
-        $paths['term' . $tid] = 'taxonomy/term/' . $tid;
+        $term = taxonomy_get_term($tid);
+        $paths['term' . $tid] = taxonomy_term_path($term);
       }
     }
   }
