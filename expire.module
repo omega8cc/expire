@@ -37,44 +37,91 @@ function expire_menu() {
 }
 
 /**
- * Implementation of hook_comment(). Acts on comment modification.
+ * Implementation of hook_comment().
+ *
+ * Acts on comment modification.
  */
 function expire_comment($comment, $op) {
   // Convert array to object
   if (is_array($comment)) {
-    $comment = (object)$comment;
+    $comment = (object) $comment;
   }
 
-  // Expire the relevant node page from the static page cache to prevent serving stale content:
-  switch ($op) {
-    case 'insert':
-    case 'update':
-    case 'publish':
-    case 'unpublish':
-    case 'delete':
-      if (!empty($comment->nid)) {
-        $node = node_load($comment->nid);
-        $node->nid = $comment->nid;
-        expire_node($node);
-      }
-      break;
+  // Return if no node id is attached to the comment.
+  if (empty($comment->nid)) {
+    return;
+  }
+
+  // Select which comment opperations require a cache flush.
+  $cases = array(
+    'insert',
+    'update',
+    'publish',
+    'unpublish',
+    'delete',
+  );
+
+  // Expire the relevant node page from the static page cache to prevent serving stale content.
+  if (in_array($op, $cases)) {
+    $node = node_load($comment->nid);
+    if ($node) {
+      expire_node($node);
+    }
   }
 }
 
 /**
- * Implementation of hook_nodeapi(). Acts on nodes defined by other modules.
+ * Implementation of hook_nodeapi().
+ *
+ * Acts on nodes defined by other modules.
  */
 function expire_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
-  switch ($op) {
-    case 'insert':
-      expire_node($node);
-      break;
-    case 'update':
-      expire_node($node);
-      break;
-    case 'delete':
-      expire_node($node);
-      break;
+  // Return if no node id is attached to the node object.
+  if (empty($node->nid)) {
+    return;
+  }
+
+  // Select which node opperations require a cache flush.
+  $cases = array(
+    'insert',
+    'update',
+    'delete',
+    'delete revision',
+  );
+
+  // Expire the relevant node page from the static page cache to prevent serving stale content.
+  if (in_array($op, $cases)) {
+    expire_node($node);
+  }
+}
+
+/**
+ * Implementation of hook_user().
+ *
+ * Acts on user account actions: expire the relevant user page from the static
+ * page cache to prevent serving stale content.
+ */
+function expire_user($op, &$edit, &$account, $category = NULL) {
+  // Return if no user id is attached to the user object.
+  if (empty($account->uid)) {
+    return;
+  }
+
+  // Select which user opperations require a cache flush.
+  $cases = array(
+    'insert',
+    'update',
+    'after update',
+  );
+
+  // Expire the relevant user page from the static page cache to prevent serving stale content.
+  if (in_array($op, $cases)) {
+    $paths[] = 'user/' . $account->uid;
+    $flushed = expire_cache_derivative($account, $paths, TRUE, TRUE);
+    watchdog('expire', 'User !uid was deleted resulting in !flushed pages being expired from the cache',  array(
+      '!uid' => $account->uid,
+      '!flushed' => $flushed,
+    ));
   }
 }
 
@@ -104,33 +151,20 @@ function expire_votingapi_delete($votes) {
 function _expire_votingapi($votes) {
   foreach ($votes as $vote) {
     if ($vote['content_type'] == 'comment') {
-      $nid = db_result(db_query('SELECT nid FROM {comments} WHERE cid = %d', $vote['content_id']));
-      $node = node_load($nid);
-      expire_node($node);
+      $nid = db_result(db_query("SELECT nid FROM {comments} WHERE cid = %d", $vote['content_id']));
+      if (is_numeric($nid)) {
+        $node = node_load($nid);
+        if ($node) {
+          expire_node($node);
+        }
+      }
     }
     if ($vote['content_type'] == 'node') {
       $node = node_load($vote['content_id']);
-      expire_node($node);
-    }
-  }
-}
-
-/**
- * Implementation of hook_user(). Acts on user account actions.
- */
-function expire_user($op, &$edit, &$account, $category = NULL) {
-  switch ($op) {
-    case 'delete':
-      // Expire the relevant user page from the static page cache to prevent serving stale content:
-      if (!empty($account->uid)) {
-        $paths[] = 'user/' . $account->uid;
-        $flushed = expire_cache_derivative($account, $paths);
-        watchdog('expire', 'User !uid was deleted resulting in !flushed pages being expired from the cache',  array(
-          '!uid' => $account->uid,
-          '!flushed' => $flushed,
-        ));
+      if ($node) {
+        expire_node($node);
       }
-      break;
+    }
   }
 }
 
@@ -219,7 +253,21 @@ function expire_node(&$node) {
           $node_field = isset($node->$field['field_name']) ? $node->$field['field_name'] : array();
           foreach ($node_field as $delta => $item) {
             if (is_numeric($item['nid'])) {
-              $paths['reference' . $nid] = 'node/' . $item['nid'];
+              $paths['reference' . $item['nid']] = 'node/'. $item['nid'];
+            }
+          }
+
+          // Look for node referers without using nodereferrer
+          $info = content_database_info($field);
+          $table = $info['table'];
+          $column = $info['columns']['nid']['column'];
+          $results = db_query("SELECT n.nid
+            FROM {%s} nr
+            INNER JOIN {node} n USING (vid)
+            WHERE nr.%s = %d", $table, $column, $node->nid);
+          while ($nid = db_result($results)) {
+            if (is_numeric($nid)) {
+              $paths['referenceparent' . $nid] = 'node/'. $nid;
             }
           }
         }
@@ -335,8 +383,8 @@ function expire_get_menu_structure($menu, $found, $needle, $first, &$found_globa
  *  http://drupal.org/node/545922
  */
 function expire_taxonomy_node_get_tids($nid) {
-  $vid = db_result(db_query('SELECT vid FROM {node} WHERE nid = %d', $nid));
-  $result = db_query(db_rewrite_sql('SELECT t.tid FROM {term_node} r INNER JOIN {term_data} t ON r.tid = t.tid INNER JOIN {vocabulary} v ON t.vid = v.vid WHERE r.vid = %d ORDER BY v.weight, t.weight, t.name', 't', 'tid'), $vid);
+  $vid = db_result(db_query("SELECT vid FROM {node} WHERE nid = %d", $nid));
+  $result = db_query(db_rewrite_sql("SELECT t.tid FROM {term_node} r INNER JOIN {term_data} t ON r.tid = t.tid INNER JOIN {vocabulary} v ON t.vid = v.vid WHERE r.vid = %d ORDER BY v.weight, t.weight, t.name", 't', 'tid'), $vid);
   $tids = array();
   while ($term = db_result($result)) {
     $tids[] = $term;
