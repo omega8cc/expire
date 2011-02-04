@@ -29,7 +29,7 @@ function expire_menu() {
     'page callback'     => 'drupal_get_form',
     'page arguments'    => array('expire_admin_settings_form'),
     'access arguments'  => array('administer site configuration'),
-    'file path'         => drupal_get_path('module', 'boost'),
+    'file path'         => drupal_get_path('module', 'expire'),
     'file'              => 'expire.admin.inc',
   );
 
