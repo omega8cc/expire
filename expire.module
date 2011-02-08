@@ -117,7 +117,7 @@ function expire_user($op, &$edit, &$account, $category = NULL) {
   // Expire the relevant user page from the static page cache to prevent serving stale content.
   if (in_array($op, $cases)) {
     $paths[] = 'user/' . $account->uid;
-    $flushed = expire_cache_derivative($account, $paths, TRUE, TRUE);
+    $flushed = expire_cache_derivative($paths, $account);
     watchdog('expire', 'User !uid was deleted resulting in !flushed pages being expired from the cache',  array(
       '!uid' => $account->uid,
       '!flushed' => $flushed,
@@ -287,7 +287,7 @@ function expire_node(&$node) {
 
   // Flush array of paths
   if (!empty($paths)) {
-    $flushed = expire_cache_derivative($node, $paths);
+    $flushed = expire_cache_derivative($paths, $node);
     watchdog('expire', 'Node !nid was flushed resulting in !flushed pages being expired from the cache',  array(
       '!nid' => $node->nid,
       '!flushed' => $flushed,
@@ -395,12 +395,12 @@ function expire_taxonomy_node_get_tids($nid) {
 /**
  * Finds all possible paths/redirects/aliases given the root path.
  *
- * @param $node
- *   node object
  * @param $paths
  *   Array of current URLs
+ * @param $node
+ *   node object
  */
-function expire_cache_derivative(&$node, $paths) {
+function expire_cache_derivative($paths, &$node = NULL) {
   global $base_path;
   $expire = array();
 
@@ -595,3 +595,11 @@ function expire_get_domains(&$node) {
   return $domains;
 }
 
+function expire_normal_path_check($path) {
+  $original_map = arg(NULL, $path);
+  $parts = array_slice($original_map, 0, MENU_MAX_PARTS);
+  list($ancestors, $placeholders) = menu_get_ancestors($parts);
+
+  $router_item = db_fetch_array(db_query_range('SELECT path FROM {menu_router} WHERE path IN (' . implode(',', $placeholders) . ') ORDER BY fit DESC', $ancestors, 0, 1));
+  return $router_item;
+}
