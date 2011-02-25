@@ -1,4 +1,3 @@
-; $Id$
 name = "Cache Expiration"
 description = "Logic for expiring page caches"
 recommends[] = nodereferrer
