@@ -17,12 +17,13 @@ define('EXPIRE_INCLUDE_BASE_URL', TRUE);
  */
 function expire_menu() {
   $items = array();
-  $items['admin/settings/performance/default'] = array(
+  $items['admin/config/development/performance/default'] = array(
     'title'             => 'Performance',
     'type'              => MENU_DEFAULT_LOCAL_TASK,
     'file path'         => drupal_get_path('module', 'system'),
+    'weight'            => -5,
   );
-  $items['admin/settings/performance/expire'] = array(
+  $items['admin/config/development/performance/expire'] = array(
     'type'              => MENU_LOCAL_TASK,
     'title'             => 'Cache Expiration',
     'page callback'     => 'drupal_get_form',
