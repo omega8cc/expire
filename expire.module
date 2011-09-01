@@ -36,39 +36,86 @@ function expire_menu() {
   return $items;
 }
 
-/**
- * Implementation of hook_comment().
- *
- * Acts on comment modification.
- */
-function expire_comment($comment, $op) {
-  // Convert array to object
-  if (is_array($comment)) {
-    $comment = (object) $comment;
-  }
 
+/**
+ * Implements hook_comment_insert().
+ *
+ * Acts on new comments.
+ */
+function expire_comment_insert($comment) {
   // Return if no node id is attached to the comment.
   if (empty($comment->nid)) {
     return;
   }
 
-  // Select which comment opperations require a cache flush.
-  $cases = array(
-    'insert',
-    'update',
-    'publish',
-    'unpublish',
-    'delete',
-  );
-
   // Expire the relevant node page from the static page cache to prevent serving stale content.
-  if (in_array($op, $cases)) {
-    $node = node_load($comment->nid);
-    if ($node) {
-      expire_node($node);
-    }
+  $node = node_load($comment->nid);
+  if ($node) {
+    expire_node($node);
   }
 }
+
+/**
+ * Implements hook_comment_update().
+ *
+ * Acts on comments updates.
+ */
+function expire_comment_update($comment) {
+  if (empty($comment->nid)) {
+    return;
+  }
+  $node = node_load($comment->nid);
+  if ($node) {
+    expire_node($node);
+  }
+}
+
+/**
+ * Implements hook_comment_publish().
+ *
+ * Acts when publishing comments.
+ */
+function expire_comment_publish($comment) {
+  if (empty($comment->nid)) {
+    return;
+  }
+  $node = node_load($comment->nid);
+  if ($node) {
+    expire_node($node);
+  }
+}
+
+/**
+ * Implements hook_comment_unpublish().
+ *
+ * Acts when unpublishing comments.
+ */
+function expire_comment_unpublish($comment) {
+  if (empty($comment->nid)) {
+    return;
+  }
+  $node = node_load($comment->nid);
+  if ($node) {
+    expire_node($node);
+  }
+}
+
+/**
+/**
+ * Implements hook_comment_delete().
+ *
+ * Acts when deleting comments.
+ */
+function expire_comment_delete($comment) {
+  if (empty($comment->nid)) {
+    return;
+  }
+  $node = node_load($comment->nid);
+  if ($node) {
+    expire_node($node);
+  }
+}
+
 
 /**
  * Implementation of hook_nodeapi().
@@ -91,6 +138,20 @@ function expire_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
 
   // Expire the relevant node page from the static page cache to prevent serving stale content.
   if (in_array($op, $cases)) {
+    expire_node($node);
+  }
+}
+
+/**
+ * Implements hook_node_insert().
+ * 
+ * Acts on new nodes.
+ */
+function expire_node_insert($node) {
+  if (empty($node->nid)) {
+    return;
+  }
+  else {
     expire_node($node);
   }
 }

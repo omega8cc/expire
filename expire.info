@@ -8,3 +8,4 @@ files[] = expire.module
 files[] = expire.admin.inc
 files[] = expire.drush.inc
 files[] = expire.rules.inc
+configure = admin/config/development/performance/expire
