@@ -118,31 +118,6 @@ function expire_comment_delete($comment) {
 
 
 /**
- * Implementation of hook_nodeapi().
- *
- * Acts on nodes defined by other modules.
- */
-function expire_nodeapi(&$node, $op, $teaser = NULL, $page = NULL) {
-  // Return if no node id is attached to the node object.
-  if (empty($node->nid)) {
-    return;
-  }
-
-  // Select which node opperations require a cache flush.
-  $cases = array(
-    'insert',
-    'update',
-    'delete',
-    'delete revision',
-  );
-
-  // Expire the relevant node page from the static page cache to prevent serving stale content.
-  if (in_array($op, $cases)) {
-    expire_node($node);
-  }
-}
-
-/**
  * Implements hook_node_insert().
  * 
  * Acts on new nodes.
@@ -155,6 +130,49 @@ function expire_node_insert($node) {
     expire_node($node);
   }
 }
+
+/**
+ * Implements hook_node_update().
+ * 
+ * Acts on node updates.
+ */
+function expire_node_update($node) {
+  if (empty($node->nid)) {
+    return;
+  }
+  else {
+    expire_node($node);
+  }
+}
+
+/**
+ * Implements hook_node_delete().
+ * 
+ * Acts on deletion of nodes.
+ */
+function expire_node_delete($node) {
+  if (empty($node->nid)) {
+    return;
+  }
+  else {
+    expire_node($node);
+  }
+}
+
+/**
+ * Implements hook_node_revision_delete().
+ * 
+ * Acts on deletion of revisions.
+ */
+function expire_node_revision_delete($node) {
+  if (empty($node->nid)) {
+    return;
+  }
+  else {
+    expire_node($node);
+  }
+}
+
 
 /**
  * Implementation of hook_user().
