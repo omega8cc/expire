@@ -175,34 +175,62 @@ function expire_node_revision_delete($node) {
 
 
 /**
- * Implementation of hook_user().
+ * Implements hook_user_insert
  *
- * Acts on user account actions: expire the relevant user page from the static
- * page cache to prevent serving stale content.
+ * Acts on user account creation
  */
-function expire_user($op, &$edit, &$account, $category = NULL) {
+function expire_user_insert(&$edit, $account, $category = NULL) {
   // Return if no user id is attached to the user object.
   if (empty($account->uid)) {
     return;
   }
-
-  // Select which user opperations require a cache flush.
-  $cases = array(
-    'insert',
-    'update',
-    'after update',
-  );
-
   // Expire the relevant user page from the static page cache to prevent serving stale content.
-  if (in_array($op, $cases)) {
-    $paths[] = 'user/' . $account->uid;
-    $flushed = expire_cache_derivative($paths, $account);
-    watchdog('expire', 'User !uid was deleted resulting in !flushed pages being expired from the cache',  array(
-      '!uid' => $account->uid,
-      '!flushed' => $flushed,
-    ));
-  }
+  $paths[] = 'user/' . $account->uid;
+  $flushed = expire_cache_derivative($paths, $account);
+  watchdog('expire', 'User !uid was created resulting in !flushed pages being expired from the cache',  array(
+    '!uid' => $account->uid,
+    '!flushed' => $flushed,
+  ));
 }
+
+/**
+ * Implements hook_user_delete
+ *
+ * Acts on user account deletion
+ */
+function expire_user_delete(&$edit, $account, $category = NULL) {
+  // Return if no user id is attached to the user object.
+  if (empty($account->uid)) {
+    return;
+  }
+  // Expire the relevant user page from the static page cache to prevent serving stale content.
+  $paths[] = 'user/' . $account->uid;
+  $flushed = expire_cache_derivative($paths, $account);
+  watchdog('expire', 'User !uid was deleted resulting in !flushed pages being expired from the cache',  array(
+    '!uid' => $account->uid,
+    '!flushed' => $flushed,
+  ));
+}
+
+/**
+ * Implements hook_user_update
+ *
+ * Acts on user account updates
+ */
+function expire_user_update(&$edit, $account, $category = NULL) {
+  // Return if no user id is attached to the user object.
+  if (empty($account->uid)) {
+    return;
+  }
+  // Expire the relevant user page from the static page cache to prevent serving stale content.
+  $paths[] = 'user/' . $account->uid;
+  $flushed = expire_cache_derivative($paths, $account);
+  watchdog('expire', 'User !uid was updated resulting in !flushed pages being expired from the cache',  array(
+    '!uid' => $account->uid,
+    '!flushed' => $flushed,
+  ));
+}
+
 
 /**
  * Implementation of hook_votingapi_insert().
