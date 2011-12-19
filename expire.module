@@ -707,6 +707,6 @@ function expire_normal_path_check($path) {
   $parts = array_slice($original_map, 0, MENU_MAX_PARTS);
   list($ancestors, $placeholders) = menu_get_ancestors($parts);
 
-  $router_item = db_fetch_array(db_query_range('SELECT path FROM {menu_router} WHERE path IN (' . implode(',', $placeholders) . ') ORDER BY fit DESC', $ancestors, 0, 1));
+  $router_item = db_query_range('SELECT path FROM {menu_router} WHERE path IN (:ancestors) ORDER BY fit DESC', 0, 1, array(':ancestors' => $ancestors))->fetchAssoc();
   return $router_item;
 }
