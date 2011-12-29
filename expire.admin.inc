@@ -39,7 +39,7 @@ function expire_admin_settings_form() {
     '#type'          => 'checkbox',
     '#title'         => t('Expire CCK node references'),
     '#default_value' => variable_get('expire_flush_cck_references', EXPIRE_FLUSH_CCK_REFERENCES),
-    '#description'   => t('When expiring a node: expire its node references and nodes containing it in their own ndoe references.'),
+    '#description'   => t('When expiring a node: expire its node references and nodes containing it in their own node references.'),
   );
 
   $form['format'] = array(
