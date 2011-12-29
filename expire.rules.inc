@@ -12,12 +12,17 @@
  */
 function expire_rules_action_info() {
   return array(
-    'expire_rules_action_flush_url' => array(
+    'expire_flush_url' => array(
+      'base' => 'expire_rules_action_flush_url',
       'label' => t('Clear URL(s) from the page cache.'),
-      'arguments' => array(
-        'urls' => array('type' => 'string', 'label' => t('URL of page to clear')),
+      'parameter' => array(
+        'urls' => array(
+          'type' => 'text',
+          'label' => t('URL of page to clear'),
+          'description' => t('Full URL (including http://); node/8; taxonomy/term/3; user/5; path alias; & <front> will work. One Per line.'),
+        ),
       ),
-      'module' => 'Expire',
+      'group' => 'Expire',
     ),
   );
 }
@@ -93,20 +98,5 @@ function expire_rules_action_flush_url($urls, $settings) {
     '!urls' => expire_print_r($full_urls),
     '!modules' => expire_print_r($modules),
   ));
-
-}
-
-/**
- * Action clear page from cache configuration form.
- */
-function expire_rules_action_flush_url_form($settings, &$form) {
-  $settings += array('urls' => '');
-
-  $form['settings']['urls'] = array(
-    '#type' => 'textarea',
-    '#title' => t('URL(s)'),
-    '#default_value' => $settings['urls'],
-    '#description' => t('Full URL (including http://); node/8; taxonomy/term/3; user/5; path alias; & <front> will work. One Per line.'),
-  );
 
 }
