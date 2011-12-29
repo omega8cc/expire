@@ -30,6 +30,7 @@ function expire_menu() {
     'access arguments'  => array('administer site configuration'),
     'file path'         => drupal_get_path('module', 'expire'),
     'file'              => 'expire.admin.inc',
+    'weight'            => 1,
   );
 
   return $items;
