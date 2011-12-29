@@ -432,7 +432,9 @@ function expire_cache_derivative($paths, &$node = NULL) {
       $path_redirects = expire_path_redirect_load(array('redirect' => $path));
       if (isset($path_redirects)) {
         foreach ($path_redirects as $path_redirect) {
-          $expire[] = $path_redirect['path'];
+          if (!empty($path_redirect['redirect'])) {
+            $expire[] = $path_redirect['redirect'];
+          }
         }
       }
     }
