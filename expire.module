@@ -118,7 +118,8 @@ function expire_user($op, &$edit, &$account, $category = NULL) {
   if (in_array($op, $cases)) {
     $paths[] = 'user/' . $account->uid;
     $flushed = expire_cache_derivative($paths, $account);
-    watchdog('expire', 'User !uid was deleted resulting in !flushed pages being expired from the cache',  array(
+    watchdog('expire', 'User !op for !uid resulted in !flushed pages being expired from the cache',  array(
+      '!op' => $op,
       '!uid' => $account->uid,
       '!flushed' => $flushed,
     ));
