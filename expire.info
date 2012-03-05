@@ -6,6 +6,9 @@ core = 7.x
 
 files[] = expire.module
 files[] = expire.admin.inc
+files[] = expire.domain.inc
 files[] = expire.drush.inc
+files[] = expire.node_reference.inc
 files[] = expire.rules.inc
+files[] = expire.votingapi.inc
 configure = admin/config/development/performance/expire

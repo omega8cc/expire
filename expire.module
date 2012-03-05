@@ -8,7 +8,7 @@
 // Defaults used if variable_get is not set.
 define('EXPIRE_FLUSH_NODE_TERMS', TRUE);
 define('EXPIRE_FLUSH_MENU_ITEMS', 1);
-define('EXPIRE_FLUSH_CCK_REFERENCES', TRUE);
+define('EXPIRE_FLUSH_NODE_REFERENCES', TRUE);
 define('EXPIRE_FLUSH_FRONT', TRUE);
 define('EXPIRE_INCLUDE_BASE_URL', TRUE);
 
@@ -43,15 +43,11 @@ function expire_menu() {
  * Acts on new comments.
  */
 function expire_comment_insert($comment) {
-  // Return if no node id is attached to the comment.
-  if (empty($comment->nid)) {
-    return;
-  }
-
-  // Expire the relevant node page from the static page cache to prevent serving stale content.
-  $node = node_load($comment->nid);
-  if ($node) {
-    expire_node($node);
+  if (!empty($comment->nid)) {
+    $node = node_load($comment->nid);
+    if ($node) {
+      expire_node($node);
+    }
   }
 }
 
@@ -61,12 +57,11 @@ function expire_comment_insert($comment) {
  * Acts on comments updates.
  */
 function expire_comment_update($comment) {
-  if (empty($comment->nid)) {
-    return;
-  }
-  $node = node_load($comment->nid);
-  if ($node) {
-    expire_node($node);
+  if (!empty($comment->nid)) {
+    $node = node_load($comment->nid);
+    if ($node) {
+      expire_node($node);
+    }
   }
 }
 
@@ -76,12 +71,11 @@ function expire_comment_update($comment) {
  * Acts when publishing comments.
  */
 function expire_comment_publish($comment) {
-  if (empty($comment->nid)) {
-    return;
-  }
-  $node = node_load($comment->nid);
-  if ($node) {
-    expire_node($node);
+  if (!empty($comment->nid)) {
+    $node = node_load($comment->nid);
+    if ($node) {
+      expire_node($node);
+    }
   }
 }
 
@@ -91,12 +85,11 @@ function expire_comment_publish($comment) {
  * Acts when unpublishing comments.
  */
 function expire_comment_unpublish($comment) {
-  if (empty($comment->nid)) {
-    return;
-  }
-  $node = node_load($comment->nid);
-  if ($node) {
-    expire_node($node);
+  if (!empty($comment->nid)) {
+    $node = node_load($comment->nid);
+    if ($node) {
+      expire_node($node);
+    }
   }
 }
 
@@ -107,68 +100,55 @@ function expire_comment_unpublish($comment) {
  * Acts when deleting comments.
  */
 function expire_comment_delete($comment) {
-  if (empty($comment->nid)) {
-    return;
-  }
-  $node = node_load($comment->nid);
-  if ($node) {
-    expire_node($node);
+  if (!empty($comment->nid)) {
+    $node = node_load($comment->nid);
+    if ($node) {
+      expire_node($node);
+    }
   }
 }
 
 
 /**
  * Implements hook_node_insert().
- * 
+ *
  * Acts on new nodes.
  */
 function expire_node_insert($node) {
-  if (empty($node->nid)) {
-    return;
-  }
-  else {
+  if (!empty($node->nid)) {
     expire_node($node);
   }
 }
 
 /**
  * Implements hook_node_update().
- * 
+ *
  * Acts on node updates.
  */
 function expire_node_update($node) {
-  if (empty($node->nid)) {
-    return;
-  }
-  else {
+  if (!empty($node->nid)) {
     expire_node($node);
   }
 }
 
 /**
  * Implements hook_node_delete().
- * 
+ *
  * Acts on deletion of nodes.
  */
 function expire_node_delete($node) {
-  if (empty($node->nid)) {
-    return;
-  }
-  else {
+  if (!empty($node->nid)) {
     expire_node($node);
   }
 }
 
 /**
  * Implements hook_node_revision_delete().
- * 
+ *
  * Acts on deletion of revisions.
  */
 function expire_node_revision_delete($node) {
-  if (empty($node->nid)) {
-    return;
-  }
-  else {
+  if (!empty($node->nid)) {
     expire_node($node);
   }
 }
@@ -231,50 +211,6 @@ function expire_user_update(&$edit, $account, $category = NULL) {
   ));
 }
 
-
-/**
- * Implementation of hook_votingapi_insert().
- *
- * @param $votes
- *  array of votes
- */
-function expire_votingapi_insert($votes) {
-  _expire_votingapi($votes);
-}
-
-/**
- * Implementation of hook_votingapi_delete().
- *
- * @param $votes
- *  array of votes
- */
-function expire_votingapi_delete($votes) {
-  _expire_votingapi($votes);
-}
-
-/**
- * Common expiry logic for votingapi.
- */
-function _expire_votingapi($votes) {
-  foreach ($votes as $vote) {
-    if ($vote['content_type'] == 'comment') {
-      $nid = db_result(db_query("SELECT nid FROM {comments} WHERE cid = %d", $vote['content_id']));
-      if (is_numeric($nid)) {
-        $node = node_load($nid);
-        if ($node) {
-          expire_node($node);
-        }
-      }
-    }
-    if ($vote['content_type'] == 'node') {
-      $node = node_load($vote['content_id']);
-      if ($node) {
-        expire_node($node);
-      }
-    }
-  }
-}
-
 /**
  * Expires a node from the cache; including related pages.
  *
@@ -283,7 +219,7 @@ function _expire_votingapi($votes) {
  * @param $node
  *  node object
  */
-function expire_node(&$node) {
+function expire_node($node) {
   $paths = array();
 
   // Check node object
@@ -301,36 +237,29 @@ function expire_node(&$node) {
 
   // Get taxonomy terms and flush
   if (module_exists('taxonomy') && variable_get('expire_flush_node_terms', EXPIRE_FLUSH_NODE_TERMS)) {
-    // Get old terms from DB
-    $tids = expire_taxonomy_node_get_tids($node->nid);
-    // Get old terms from static variable
-    $terms = taxonomy_node_get_terms($node);
-    if (!empty($terms)) {
-      foreach ($terms as $term) {
-        $tids[$term->tid] = $term->tid;
-      }
-    }
-    // Get new terms from node object
-    if (!empty($node->taxonomy)) {
-      foreach ($node->taxonomy as $vocab) {
-        if (is_array($vocab)) {
-          foreach ($vocab as $term) {
-            $tids[$term] = $term;
-          }
+    $terms = array();
+    $info = field_info_fields();
+
+    foreach (field_info_instances('node', $node->type) as $name => $instance) {
+      if ($info[$name]['type'] == 'taxonomy_term_reference') {
+        $new_terms = field_get_items('node', $node, $name);
+        if (is_array($new_terms)) {
+          $terms = array_merge($new_terms, $terms);
+        }
+        $old_terms = isset($node->original) && !empty($node->original) ? field_get_items('node', $node->original, $name) : array();
+        if (is_array($old_terms)) {
+          $terms = array_merge($old_terms, $terms);
         }
       }
     }
-    $filenames = array();
-    foreach ($tids as $tid) {
-      if (is_numeric($tid)) {
-        $term = taxonomy_get_term($tid);
-        $paths['term' . $tid] = taxonomy_term_path($term);
-      }
+
+    foreach ($terms as $term) {
+      $paths['term' . $term['tid']] = 'taxonomy/term/' . $term['tid'];
     }
   }
 
   // Get menu and flush related items in the menu.
-  if (variable_get('expire_flush_menu_items', EXPIRE_FLUSH_MENU_ITEMS) !=0) {
+  if (module_exists('menu') && variable_get('expire_flush_menu_items', EXPIRE_FLUSH_MENU_ITEMS) != 0) {
     if (!isset($node->menu['menu_name'])) {
       menu_node_prepare($node);
     }
@@ -348,48 +277,12 @@ function expire_node(&$node) {
     $paths = array_merge($links, $paths);
   }
 
-  // Get CCK References and flush.
-  if (variable_get('expire_flush_cck_references', EXPIRE_FLUSH_CCK_REFERENCES) && module_exists('nodereference')) {
-    $nids = array();
-    $type = content_types($node->type);
-    if ($type) {
-      foreach ($type['fields'] as $field) {
-        // Add referenced nodes to nids. This will clean up nodereferrer fields
-        // when the referencing node is updated.
-        if ($field['type'] == 'nodereference') {
-          $node_field = isset($node->$field['field_name']) ? $node->$field['field_name'] : array();
-          foreach ($node_field as $delta => $item) {
-            if (is_numeric($item['nid'])) {
-              $paths['reference' . $item['nid']] = 'node/'. $item['nid'];
-            }
-          }
-
-          // Look for node referers without using nodereferrer
-          $info = content_database_info($field);
-          $table = $info['table'];
-          $column = $info['columns']['nid']['column'];
-          $results = db_query("SELECT n.nid
-            FROM {%s} nr
-            INNER JOIN {node} n USING (vid)
-            WHERE nr.%s = %d", $table, $column, $node->nid);
-          while ($nid = db_result($results)) {
-            if (is_numeric($nid)) {
-              $paths['referenceparent' . $nid] = 'node/'. $nid;
-            }
-          }
-        }
-      }
-    }
-
-    // Get CCK references pointing to this node and flush.
-    if (module_exists('nodereferrer')) {
-      $nids = nodereferrer_referrers($node->nid);
-      foreach ($nids as $nid) {
-        if (is_numeric($nid['nid'])) {
-          $paths['referrer' . $nid['nid']] = 'node/' . $nid['nid'];
-        }
-      }
-    }
+  // Get Node References and flush.
+  if (variable_get('expire_flush_node_references', EXPIRE_FLUSH_NODE_REFERENCES)
+   && module_exists('node_reference')
+   && module_load_include('inc', 'expire', 'expire.node_reference') != FALSE) {
+    $node_references = expire_get_node_references($node);
+    $paths = array_merge($node_references, $paths);
   }
 
   // Flush array of paths
@@ -484,22 +377,6 @@ function expire_get_menu_structure($menu, $found, $needle, $first, &$found_globa
 }
 
 /**
- * Return taxonomy terms given a nid.
- *
- * Needed because of a weird bug with CCK & node_load()
- *  http://drupal.org/node/545922
- */
-function expire_taxonomy_node_get_tids($nid) {
-  $vid = db_result(db_query("SELECT vid FROM {node} WHERE nid = %d", $nid));
-  $result = db_query(db_rewrite_sql("SELECT t.tid FROM {term_node} r INNER JOIN {term_data} t ON r.tid = t.tid INNER JOIN {vocabulary} v ON t.vid = v.vid WHERE r.vid = %d ORDER BY v.weight, t.weight, t.name", 't', 'tid'), $vid);
-  $tids = array();
-  while ($term = db_result($result)) {
-    $tids[] = $term;
-  }
-  return $tids;
-}
-
-/**
  * Finds all possible paths/redirects/aliases given the root path.
  *
  * @param $paths
@@ -534,12 +411,12 @@ function expire_cache_derivative($paths, &$node = NULL) {
     $expire[] = substr($path_alias, strlen($base_path));
 
     // Path redirects
-    if (module_exists('path_redirect')) {
-      $path_redirects = expire_path_redirect_load(array('redirect' => $path));
-      if (isset($path_redirects)) {
-        foreach ($path_redirects as $path_redirect) {
-          if (!empty($path_redirect['redirect'])) {
-            $expire[] = $path_redirect['redirect'];
+    if (module_exists('redirect')) {
+      $redirects = redirect_load_multiple(array(), array('redirect' => $path));
+      if (isset($redirects) && !empty($redirects)) {
+        foreach ($redirects as $redirect) {
+          if (!empty($redirect->source)) {
+            $expire[] = $redirect->source;
           }
         }
       }
@@ -558,11 +435,14 @@ function expire_cache_derivative($paths, &$node = NULL) {
   $urls = array();
   global $base_url;
   if (variable_get('expire_include_base_url', EXPIRE_INCLUDE_BASE_URL)) {
-    foreach (expire_get_base_urls($node) as $domain_id) {
-      foreach ($domain_id as $base) {
-        foreach ($expire as $path) {
-          $urls[] = $base . $path;
-        }
+    $base_urls[] = $base_url;
+    if (module_exists('domain')
+     && module_load_include('inc', 'expire', 'expire.domain') != FALSE) {
+      $base_urls = array_merge($base_urls, expire_get_base_urls($node));
+    }
+    foreach ($expire as $path) {
+      foreach ($base_urls as $base) {
+        $urls[] = $base . $path;
       }
     }
   }
@@ -583,39 +463,6 @@ function expire_cache_derivative($paths, &$node = NULL) {
 }
 
 /**
- * Retrieve a specific URL redirect from the database.
- * http://drupal.org/node/451790
- *
- * @param $where
- *   Array containing 'redirect' => $path
- */
-function expire_path_redirect_load($where = array(), $args = array(), $sort = array()) {
-  $redirects = array();
-  if (is_numeric($where)) {
-    $where = array('rid' => $where);
-  }
-
-  foreach ($where as $key => $value) {
-    if (is_string($key)) {
-      $args[] = $value;
-      $where[$key] = $key .' = '. (is_numeric($value) ? '%d' : "'%s'");
-    }
-  }
-
-  if ($where && $args) {
-    $sql = "SELECT * FROM {path_redirect} WHERE ". implode(' AND ', $where);
-    if ($sort) {
-      $sql .= ' ORDER BY '. implode(' ,', $sort);
-    }
-    $result = db_query($sql, $args);
-    while ($redirect = db_fetch_array($result)) {
-      $redirects[] = $redirect;
-    }
-    return $redirects;
-  }
-}
-
-/**
  * Simple print_r to html function
  *
  * @param $data
@@ -627,83 +474,6 @@ function expire_print_r($data) {
   return str_replace('    ', '&nbsp;&nbsp;&nbsp;&nbsp;', nl2br(htmlentities(print_r($data, TRUE))));
 }
 
-/**
- * Get all base url's where this node can appear. Domain access support.
- *
- * @param $node
- *   node object
- * @return array
- *   array(0 => array($base_url . '/'))
- */
-function expire_get_base_urls(&$node) {
-  global $base_url, $base_path;
-
-  // Get list of URL's if using domain access
-  $base_urls = array();
-  $domains = array();
-  if (module_exists('domain') && isset($node->domains)) {
-    // Get domains from node/user object
-    foreach ($node->domains as $key => $domain_id) {
-      if ($key != $domain_id) {
-        continue;
-      }
-      $domains[$domain_id] = $domain_id;
-    }
-    // Get domains from database
-    foreach (expire_get_domains($node) as $domain_id) {
-      $domains[$domain_id] = $domain_id;
-    }
-    // Get aliases and set base url
-    foreach ($domains as $domain_id) {
-      $domain = domain_lookup($domain_id);
-      if ($domain['valid'] == 1) {
-        if (isset($domain['path'])) {
-          $base_urls[$domain_id][] = $domain['path'];
-        }
-        if (is_array($domain['aliases'])) {
-          foreach ($domain['aliases'] as $alias) {
-            if ($alias['redirect'] != 1) {
-              $temp_domain = array('scheme' => $domain['scheme'], 'subdomain' => $alias['pattern']);
-              $base_urls[$domain_id][] = domain_get_path($temp_domain);
-            }
-          }
-        }
-      }
-    }
-  }
-  else {
-    $base_urls[0][] = $base_url . '/';
-  }
-  return $base_urls;
-}
-
-/**
- * Get domains the node is currently published to
- *
- * @param $node
- *   node object
- * @return array
- *   array('$gid' => $gid)
- */
-function expire_get_domains(&$node) {
-  $domains = array();
-  if ($node->nid) {
-    $result = db_query("SELECT gid FROM {domain_access} WHERE nid = %d", $node->nid);
-    while ($row = db_fetch_array($result)) {
-      $gid = $row['gid'];
-      $domains[$gid] = $gid;
-    }
-  }
-  elseif ($node->mail && $node->name) {
-    $result = db_query("SELECT domain_id FROM {domain_editor} WHERE uid = %d", $node->uid);
-    while ($row = db_fetch_array($result)) {
-      $gid = $row['domain_id'];
-      $domains[$gid] = $gid;
-    }
-  }
-  return $domains;
-}
-
 function expire_normal_path_check($path) {
   $original_map = arg(NULL, $path);
   $parts = array_slice($original_map, 0, MENU_MAX_PARTS);
@@ -712,3 +482,47 @@ function expire_normal_path_check($path) {
   $router_item = db_query_range('SELECT path FROM {menu_router} WHERE path IN (:ancestors) ORDER BY fit DESC', 0, 1, array(':ancestors' => $ancestors))->fetchAssoc();
   return $router_item;
 }
+
+/**
+ * Implementation of hook_votingapi_insert().
+ *
+ * @param $votes
+ *  array of votes
+ */
+function expire_votingapi_insert($votes) {
+  _expire_votingapi($votes);
+}
+
+/**
+ * Implementation of hook_votingapi_delete().
+ *
+ * @param $votes
+ *  array of votes
+ */
+function expire_votingapi_delete($votes) {
+  _expire_votingapi($votes);
+}
+
+/**
+ * Common expiry logic for votingapi.
+ */
+function _expire_votingapi($votes) {
+  foreach ($votes as $vote) {
+    if ($vote['entity_type'] == 'comment') {
+      $nid = db_query("SELECT nid FROM {comments} WHERE cid = :cid", array(':cid' => $vote['entity_id']))->fetchField();
+      if (is_numeric($nid)) {
+        $node = node_load($nid);
+        if ($node) {
+          expire_node($node);
+        }
+      }
+    }
+    if ($vote['entity_type'] == 'node') {
+      $node = node_load($vote['entity_id']);
+      if ($node) {
+        expire_node($node);
+      }
+    }
+  }
+}
+
