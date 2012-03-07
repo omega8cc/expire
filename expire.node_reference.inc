@@ -12,8 +12,6 @@ function expire_get_node_references($node)  {
       foreach($node_field[LANGUAGE_NONE] as $reference) {
         $paths['reference' . $reference['nid']] = 'node/'. $reference['nid'];
       }
-
-      $types = entity_load_multiple_by_name('node');
     }
   }
   return $paths;
