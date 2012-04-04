@@ -94,7 +94,6 @@ function expire_comment_unpublish($comment) {
 }
 
 /**
-/**
  * Implements hook_comment_delete().
  *
  * Acts when deleting comments.
