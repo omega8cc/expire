@@ -12,16 +12,14 @@ function expire_get_domains(&$node) {
   $domains = array();
   if ($node->nid) {
     $result = db_query("SELECT gid FROM {domain_access} WHERE nid = :nid", array(':nid' => $node->nid));
-    while ($row = db_fetch_array($result)) {
-      $gid = $row['gid'];
-      $domains[$gid] = $gid;
+    foreach ($result as $row) {
+      $domains[$gid] = $row->gid;
     }
   }
   elseif ($node->mail && $node->name) {
     $result = db_query("SELECT domain_id FROM {domain_editor} WHERE uid = :uid", array(':uid' => $node->uid));
-    while ($row = db_fetch_array($result)) {
-      $gid = $row['domain_id'];
-      $domains[$gid] = $gid;
+    foreach ($result as $row) {
+      $domains[$gid] = $row->domain_id;
     }
   }
   return $domains;
