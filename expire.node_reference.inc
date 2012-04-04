@@ -18,7 +18,7 @@ function expire_get_node_references($node) {
     if ($field_types[$field['field_name']]['type'] == 'node_reference') {
       $node_field = isset($node->$field['field_name']) && !empty($node->$field['field_name']) ? $node->$field['field_name'] : array();
       if (!empty($node_field)) {
-        foreach($node_field[LANGUAGE_NONE] as $reference) {
+        foreach($node_field[$node->language] as $reference) {
           $paths['reference' . $reference['nid']] = 'node/'. $reference['nid'];
         }
       }
