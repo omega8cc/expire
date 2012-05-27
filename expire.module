@@ -434,7 +434,7 @@ function expire_cache_derivative($paths, &$node = NULL) {
   $urls = array();
   global $base_url;
   if (variable_get('expire_include_base_url', EXPIRE_INCLUDE_BASE_URL)) {
-    $base_urls[] = $base_url;
+    $base_urls[] = $base_url . base_path();
     if (module_exists('domain')
      && module_load_include('inc', 'expire', 'expire.domain') != FALSE) {
       $base_urls = array_merge($base_urls, expire_get_base_urls($node));
