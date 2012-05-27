@@ -508,7 +508,7 @@ function expire_votingapi_delete($votes) {
 function _expire_votingapi($votes) {
   foreach ($votes as $vote) {
     if ($vote['entity_type'] == 'comment') {
-      $nid = db_query("SELECT nid FROM {comments} WHERE cid = :cid", array(':cid' => $vote['entity_id']))->fetchField();
+      $nid = db_query("SELECT nid FROM {comment} WHERE cid = :cid", array(':cid' => $vote['entity_id']))->fetchField();
       if (is_numeric($nid)) {
         $node = node_load($nid);
         if ($node) {
