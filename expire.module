@@ -356,8 +356,13 @@ function expire_get_menu_structure($menu, $found, $needle, $first, &$found_globa
   }
 
   // Clean up
-  if (isset($structure) && is_array($structure)) {
-    $structure = array_unique($structure);
+  if (isset($structure)) {
+    if (is_array($structure)) {
+      $structure = array_unique($structure);
+    }
+  }
+  else {
+    $structure = array();
   }
   $found_global = $found;
   if ($first) {
