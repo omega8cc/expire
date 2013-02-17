@@ -439,16 +439,24 @@ function expire_cache_derivative($paths, &$node = NULL) {
   $expire = array_unique($expire);
   // Add on the url to these paths
   $urls = array();
-  global $base_url;
   if (variable_get('expire_include_base_url', EXPIRE_INCLUDE_BASE_URL)) {
-    $base_urls[] = $base_url . base_path();
+    $base_urls[] = url('', array('absolute' => TRUE));
     if (module_exists('domain')
      && module_load_include('inc', 'expire', 'expire.domain') != FALSE) {
       $base_urls = array_merge($base_urls, expire_get_base_urls($node));
     }
     foreach ($expire as $path) {
       foreach ($base_urls as $base) {
-        $urls[] = $base . $path;
+        // If domain access is enabled the $base_urls is an array with configured subdomains
+        if (is_array($base)) {
+          foreach ($base as $subdomain) {
+            $urls[] = $subdomain . $path;
+          }
+        }
+        else {
+          $base = rtrim($base, '/') . '/';
+          $urls[] = $base . $path;
+        }
       }
     }
   }
