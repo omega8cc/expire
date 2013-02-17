@@ -261,6 +261,8 @@ function expire_node($node) {
   if (module_exists('menu') && variable_get('expire_flush_menu_items', EXPIRE_FLUSH_MENU_ITEMS) != 0) {
     if (!isset($node->menu['menu_name'])) {
       menu_node_prepare($node);
+      // Avoid menu_link_delete() called in menu_node_save.
+      $node->menu['enabled'] = (int) (bool) $node->menu['mlid'];
     }
     $menu = menu_tree_all_data($node->menu['menu_name']);
     $tempa = NULL;
