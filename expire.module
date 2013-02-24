@@ -262,8 +262,11 @@ function expire_node($node) {
     if (!isset($node->menu['menu_name'])) {
       $menu_node = clone $node;
       menu_node_prepare($menu_node);
+      $menu = menu_tree_all_data($menu_node->menu['menu_name']);
     }
-    $menu = menu_tree_all_data($menu_node->menu['menu_name']);
+    else {
+      $menu = menu_tree_all_data($node->menu['menu_name']);
+    }
     $tempa = NULL;
     $tempb = NULL;
     if (variable_get('expire_flush_menu_items', EXPIRE_FLUSH_MENU_ITEMS) == 1) {
