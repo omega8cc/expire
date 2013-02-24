@@ -177,7 +177,7 @@ function expire_user_insert(&$edit, $account, $category = NULL) {
  *
  * Acts on user account deletion
  */
-function expire_user_delete(&$edit, $account, $category = NULL) {
+function expire_user_delete($account) {
   // Return if no user id is attached to the user object.
   if (empty($account->uid)) {
     return;
