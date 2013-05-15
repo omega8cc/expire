@@ -1,12 +1,14 @@
-name = Cache expiration
+name = Cache Expiration
 description = Logic for expiring cached pages.
 package = Performance and scalability
 core = 7.x
 
 configure = admin/config/development/performance/expire
 
+files[] = includes/expire.api.inc
 files[] = includes/expire.comment.inc
 files[] = includes/expire.domain.inc
+files[] = includes/expire.interface.inc
 files[] = includes/expire.menu.inc
 files[] = includes/expire.node.inc
 files[] = includes/expire.user.inc

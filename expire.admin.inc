@@ -2,65 +2,381 @@
 
 /**
  * @file
- * Provides form for changing settings
+ * Settings form for CACHE EXPIRATION module.
  */
 
 /**
- * Implementation of the former hook_settings().
+ * Settings form for actions with cached pages.
  */
 function expire_admin_settings_form() {
-  drupal_set_title(t('Cache Expiration'));
-  $form['expire'] = array(
-    '#type'          => 'fieldset',
-    '#title'         => t('What to expire'),
+
+  $form['cache_actions'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Cache expiration actions'),
+    '#collapsible' => TRUE,
   );
 
-  $form['expire']['expire_flush_front'] = array(
-    '#type'        => 'checkbox',
-    '#title'       => t('Expire front page'),
-    '#default_value' => variable_get('expire_flush_front', EXPIRE_FLUSH_FRONT),
-    '#description'   => t('When expiring a node: if promoted to front page, expire front page.'),
+  $form['cache_actions']['node'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Node actions'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['cache_actions']['node']['expire_node_actions'] = array(
+    '#type' => 'checkboxes',
+    '#description' => t('Page cache for node will be expired after selected actions.'),
+    '#options' => array(
+      EXPIRE_NODE_INSERT => t('Node insert'),
+      EXPIRE_NODE_UPDATE => t('Node update'),
+      EXPIRE_NODE_DELETE => t('Node delete'),
+    ),
+    '#default_value' => variable_get('expire_node_actions', array()),
+  );
+
+  $form['cache_actions']['comment'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Comment actions'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['cache_actions']['comment']['expire_comment_actions'] = array(
+    '#type' => 'checkboxes',
+    '#description' => t('Page cache for comment will be expired after selected actions.'),
+    '#options' => array(
+      EXPIRE_COMMENT_INSERT => t('Comment insert'),
+      EXPIRE_COMMENT_UPDATE => t('Comment update'),
+      EXPIRE_COMMENT_DELETE => t('Comment delete'),
+      EXPIRE_COMMENT_PUBLISH => t('Comment publish'),
+      EXPIRE_COMMENT_UNPUBLISH => t('Comment unpublish'),
+    ),
+    '#default_value' => variable_get('expire_comment_actions', array()),
+  );
+
+  $form['cache_actions']['user'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('User actions'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['cache_actions']['user']['expire_user_actions'] = array(
+    '#type' => 'checkboxes',
+    '#description' => t('Page cache for user will be expired after selected actions.'),
+    '#options' => array(
+      EXPIRE_USER_INSERT => t('User insert'),
+      EXPIRE_USER_UPDATE => t('User update'),
+      EXPIRE_USER_DELETE => t('User delete'),
+      EXPIRE_USER_CANCEL => t('User cancel'),
+    ),
+    '#default_value' => variable_get('expire_user_actions', array()),
+  );
+
+  $form['cache_expire'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('What pages should be expired?'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+
+  // NODE ACTION.
+  $form['cache_expire']['node'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('After node action'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['cache_expire']['node']['expire_node_expire_front_page'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Front page'),
+    '#default_value' => variable_get('expire_node_expire_front_page', EXPIRE_NODE_FRONT_PAGE),
+  );
+
+  $form['cache_expire']['node']['expire_node_expire_node_page'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Node page'),
+    '#default_value' => variable_get('expire_node_expire_node_page', EXPIRE_NODE_NODE_PAGE),
   );
 
   if (module_exists('taxonomy')) {
-    $form['expire']['expire_flush_node_terms'] = array(
-      '#type'          => 'checkbox',
-      '#title'         => t('Expire node term pages'),
-      '#default_value' => variable_get('expire_flush_node_terms', EXPIRE_FLUSH_NODE_TERMS),
-      '#description'   => t('When expiring a node: expire taxonomy pages for its terms.'),
-    );
-  }
-
-  if (module_exists('menu')) {
-    $form['expire']['expire_flush_menu_items'] = array(
-      '#type'          => 'radios',
-      '#title'         => t('Expire menus'),
-      '#options'       => array(0 => t('No'), EXPIRE_FLUSH_MENU_ITEMS => t('Family'), 2 => t('Entire menu')),
-      '#default_value' => variable_get('expire_flush_menu_items', EXPIRE_FLUSH_MENU_ITEMS),
-      '#description'   => t('When expiring a node: expire related menu items or entire menu'),
+    $form['cache_expire']['node']['expire_node_expire_term_pages'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Node term pages'),
+      '#default_value' => variable_get('expire_node_expire_term_pages', EXPIRE_NODE_TERM_PAGES),
     );
   }
 
   if (module_exists('node_reference')) {
-    $form['expire']['expire_flush_node_references'] = array(
-      '#type'          => 'checkbox',
-      '#title'         => t('Expire node references'),
-      '#default_value' => variable_get('expire_flush_node_references', EXPIRE_FLUSH_NODE_REFERENCES),
-      '#description'   => t('When expiring a node: expire its node references and nodes containing it in their own node references.'),
+    $form['cache_expire']['node']['expire_node_expire_reference_pages'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Node reference pages'),
+      '#default_value' => variable_get('expire_node_expire_reference_pages', EXPIRE_NODE_REFERENCE_PAGES),
     );
   }
 
-  $form['format'] = array(
-    '#type'          => 'fieldset',
-    '#title'         => t('Expire protocol'),
+  $form['cache_expire']['node']['expire_node_expire_custom'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Custom pages'),
+    '#default_value' => variable_get('expire_node_expire_custom', EXPIRE_NODE_CUSTOM),
   );
 
-  $form['format']['expire_include_base_url'] = array(
-    '#type'          => 'checkbox',
-    '#title'         => t('Include base URL in expires'),
-    '#default_value' => variable_get('expire_include_base_url', EXPIRE_INCLUDE_BASE_URL),
-    '#description'   => t('Include the base URL in expire requests. Compatible with Domain Access'),
+  $form['cache_expire']['node']['expire_node_expire_custom_pages'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Enter custom urls'),
+    '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>node/[node:nid]</strong>')) . '<br/>'
+      . t('If you want to use wildcard flush, add |wildcard to the end of the line. Example: !example', array('!example' => '<strong>node/[node:nid]|wildcard</strong>')) . '<br/>'
+      . t('You may use tokens here.'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="expire_node_expire_custom"]' => array('checked' => TRUE),
+      ),
+    ),
+    '#default_value' => variable_get('expire_node_expire_custom_pages'),
   );
+
+  // COMMENT ACTION.
+  $form['cache_expire']['comment'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('After comment action'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['cache_expire']['comment']['expire_comment_expire_front_page'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Front page'),
+    '#default_value' => variable_get('expire_comment_expire_front_page', EXPIRE_COMMENT_FRONT_PAGE),
+  );
+
+  $form['cache_expire']['comment']['expire_comment_expire_comment_page'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Comment page'),
+    '#default_value' => variable_get('expire_comment_expire_comment_page', EXPIRE_COMMENT_COMMENT_PAGE),
+  );
+
+  $form['cache_expire']['comment']['expire_comment_expire_node_page'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Comment\'s node page'),
+    '#default_value' => variable_get('expire_comment_expire_node_page', EXPIRE_COMMENT_NODE_PAGE),
+  );
+
+  if (module_exists('taxonomy')) {
+    $form['cache_expire']['comment']['expire_comment_expire_node_term_pages'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Comment\'s node term pages'),
+      '#default_value' => variable_get('expire_comment_expire_node_term_pages', EXPIRE_COMMENT_NODE_TERM_PAGES),
+    );
+  }
+
+  if (module_exists('node_reference')) {
+    $form['cache_expire']['comment']['expire_comment_expire_node_reference_pages'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Comment\'s node reference pages'),
+      '#default_value' => variable_get('expire_comment_expire_node_reference_pages', EXPIRE_COMMENT_NODE_REFERENCE_PAGES),
+    );
+  }
+
+  $form['cache_expire']['comment']['expire_comment_expire_custom'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Custom pages'),
+    '#default_value' => variable_get('expire_comment_expire_custom', EXPIRE_COMMENT_CUSTOM),
+  );
+
+  $form['cache_expire']['comment']['expire_comment_expire_custom_pages'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Enter custom urls'),
+    '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>comment/[comment:cid]</strong>')) . '<br/>'
+      . t('If you want to use wildcard flush, add |wildcard to the end of the line. Example: !example', array('!example' => '<strong>comment/[comment:cid]|wildcard</strong>')) . '<br/>'
+      . t('You may use tokens here.'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="expire_comment_expire_custom"]' => array('checked' => TRUE),
+      ),
+    ),
+    '#default_value' => variable_get('expire_comment_expire_custom_pages'),
+  );
+
+  // USER ACTION.
+  $form['cache_expire']['user'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('After user action'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['cache_expire']['user']['expire_user_expire_front_page'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Front page'),
+    '#default_value' => variable_get('expire_user_expire_front_page', EXPIRE_USER_FRONT_PAGE),
+  );
+
+  $form['cache_expire']['user']['expire_user_expire_user_page'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('User page'),
+    '#default_value' => variable_get('expire_user_expire_user_page', EXPIRE_USER_USER_PAGE),
+  );
+
+  $form['cache_expire']['user']['expire_user_expire_custom'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Custom pages'),
+    '#default_value' => variable_get('expire_user_expire_custom', EXPIRE_USER_CUSTOM),
+  );
+
+  $form['cache_expire']['user']['expire_user_expire_custom_pages'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Enter custom urls'),
+    '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>user/[user:uid]</strong>')) . '<br/>'
+      . t('If you want to use wildcard flush, add |wildcard to the end of the line. Example: !example', array('!example' => '<strong>user/[user:uid]|wildcard</strong>')) . '<br/>'
+      . t('You may use tokens here.'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="expire_user_expire_custom"]' => array('checked' => TRUE),
+      ),
+    ),
+    '#default_value' => variable_get('expire_user_expire_custom_pages'),
+  );
+
+  // Add the token tree UI.
+  if (module_exists('token')) {
+
+    $form['cache_expire']['node']['expire_node_expire_custom_pages']['#description'] .= ' ' .
+      theme('token_tree_link', array('text' => t('View available tokens.'), 'token_types' => array('node')));
+
+    $form['cache_expire']['comment']['expire_comment_expire_custom_pages']['#description'] .= ' ' .
+      theme('token_tree_link', array('text' => t('View available tokens.'), 'token_types' => array('comment')));
+
+    $form['cache_expire']['user']['expire_user_expire_custom_pages']['#description'] .= ' ' .
+      theme('token_tree_link', array('text' => t('View available tokens.'), 'token_types' => array('user')));
+  }
 
   return system_settings_form($form);
+}
+
+/**
+ * Settings form for node type.
+ */
+function expire_node_settings_form(&$form, &$form_state) {
+
+  if (empty($form['#node_type']->type)) {
+    return;
+  }
+
+  $node_type = $form['#node_type']->type;
+
+  $form['expire'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Memcache Storage Page Cache'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#group' => 'additional_settings',
+  );
+
+  // NODE SETTINGS.
+  $form['expire']['expire_node_override_defaults'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Override default settings for this node type'),
+    '#default_value' => variable_get('expire_node_override_defaults_' . $node_type),
+  );
+
+  // Copy here settings from default settings form.
+  $settings_form = expire_admin_settings_form();
+  $form['expire']['node_actions'] = $settings_form['cache_actions']['node'];
+  $form['expire']['node_expires'] = $settings_form['cache_expire']['node'];
+
+  $form['expire']['node_actions']['#collapsed'] = FALSE;
+  $form['expire']['node_expires']['#collapsed'] = FALSE;
+
+  // Display fieldsets with settings only if they should be overriden.
+  $form['expire']['node_actions']['#states'] = array(
+    'visible' => array(':input[name="expire_node_override_defaults"]' => array('checked' => TRUE)),
+  );
+  $form['expire']['node_expires']['#states'] = array(
+    'visible' => array(':input[name="expire_node_override_defaults"]' => array('checked' => TRUE)),
+  );
+
+  // Change tab title to more suitable.
+  $form['expire']['node_expires']['#title'] = t('What pages should be expired when node action is triggered?');
+
+
+  // COMMENT SETTINGS.
+  $form['expire']['expire_comment_override_defaults'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Override default settings for comments to this node type'),
+    '#default_value' => variable_get('expire_comment_override_defaults_' . $node_type),
+  );
+
+  $form['expire']['comment_actions'] = $settings_form['cache_actions']['comment'];
+  $form['expire']['comment_expires'] = $settings_form['cache_expire']['comment'];
+
+  $form['expire']['comment_actions']['#collapsed'] = FALSE;
+  $form['expire']['comment_expires']['#collapsed'] = FALSE;
+
+  // Display fieldsets with settings only if they should be overriden.
+  $form['expire']['comment_actions']['#states'] = array(
+    'visible' => array(':input[name="expire_comment_override_defaults"]' => array('checked' => TRUE)),
+  );
+  $form['expire']['comment_expires']['#states'] = array(
+    'visible' => array(':input[name="expire_comment_override_defaults"]' => array('checked' => TRUE)),
+  );
+
+  // Set default settings for this node type.
+  $form['expire']['node_actions']['expire_node_actions']['#default_value'] =
+    variable_get('expire_node_actions_' . $node_type, array());
+
+  $form['expire']['node_expires']['expire_node_expire_front_page']['#default_value'] =
+    variable_get('expire_node_expire_front_page_' . $node_type, EXPIRE_NODE_FRONT_PAGE);
+
+  $form['expire']['node_expires']['expire_node_expire_node_page']['#default_value'] =
+    variable_get('expire_node_expire_node_page_' . $node_type, EXPIRE_NODE_NODE_PAGE);
+
+  if (module_exists('taxonomy')) {
+    $form['expire']['node_expires']['expire_node_expire_term_pages']['#default_value'] =
+      variable_get('expire_node_expire_term_pages_' . $node_type, EXPIRE_NODE_TERM_PAGES);
+  }
+
+  if (module_exists('node_reference')) {
+    $form['expire']['node_expires']['expire_node_expire_reference_pages']['#default_value'] =
+      variable_get('expire_node_expire_reference_pages_' . $node_type, EXPIRE_NODE_REFERENCE_PAGES);
+  }
+
+  $form['expire']['node_expires']['expire_node_expire_custom']['#default_value'] =
+    variable_get('expire_node_expire_custom_' . $node_type, EXPIRE_NODE_CUSTOM);
+
+  $form['expire']['node_expires']['expire_node_expire_custom_pages']['#default_value'] =
+    variable_get('expire_node_expire_custom_pages_' . $node_type);
+
+  // Set default values for comments to this node type.
+  $form['expire']['comment_actions']['expire_comment_actions']['#default_value'] =
+    variable_get('expire_comment_actions_' . $node_type, array());
+
+  $form['expire']['comment_expires']['expire_comment_expire_front_page']['#default_value'] =
+    variable_get('expire_comment_expire_front_page_' . $node_type, EXPIRE_COMMENT_FRONT_PAGE);
+
+  $form['expire']['comment_expires']['expire_comment_expire_comment_page']['#default_value'] =
+    variable_get('expire_comment_expire_comment_page_' . $node_type, EXPIRE_COMMENT_COMMENT_PAGE);
+
+
+  $form['expire']['comment_expires']['expire_comment_expire_node_page']['#default_value'] =
+    variable_get('expire_comment_expire_node_page_' . $node_type, EXPIRE_COMMENT_NODE_PAGE);
+
+  if (module_exists('taxonomy')) {
+    $form['expire']['comment_expires']['expire_comment_expire_node_term_pages']['#default_value'] =
+      variable_get('expire_comment_expire_node_term_pages_' . $node_type, EXPIRE_COMMENT_NODE_TERM_PAGES);
+  }
+
+  if (module_exists('node_reference')) {
+    $form['expire']['comment_expires']['expire_comment_expire_node_reference_pages']['#default_value'] =
+      variable_get('expire_comment_expire_node_reference_pages_' . $node_type, EXPIRE_COMMENT_NODE_REFERENCE_PAGES);
+  }
+
+  $form['expire']['comment_expires']['expire_comment_expire_custom']['#default_value'] =
+    variable_get('expire_comment_expire_custom_' . $node_type, EXPIRE_COMMENT_CUSTOM);
+
+  $form['expire']['comment_expires']['expire_comment_expire_custom_pages']['#default_value'] =
+    variable_get('expire_comment_expire_custom_pages_' . $node_type);
+
+  // Attach js.
+  $form['#attached']['js'][] = drupal_get_path('module', 'expire') . '/js/expire.js';
 }
