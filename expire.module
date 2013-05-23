@@ -58,19 +58,19 @@ define('EXPIRE_USER_CUSTOM'                 , FALSE);
 function expire_menu() {
 
   $items['admin/config/development/performance/default'] = array(
-    'title'             => 'Performance',
-    'type'              => MENU_DEFAULT_LOCAL_TASK,
-    'file path'         => drupal_get_path('module', 'system'),
-    'weight'            => -5,
+    'title'            => 'Performance',
+    'type'             => MENU_DEFAULT_LOCAL_TASK,
+    'weight'           => 0,
   );
 
   $items['admin/config/development/performance/expire'] = array(
-    'type'              => MENU_LOCAL_TASK,
-    'title'             => 'Cache Expiration',
-    'page callback'     => 'drupal_get_form',
-    'page arguments'    => array('expire_admin_settings_form'),
-    'access arguments'  => array('administer site configuration'),
-    'file'              => 'expire.admin.inc',
+    'title'            => 'Cache Expiration',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('expire_admin_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'file'             => 'expire.admin.inc',
+    'type'             => MENU_LOCAL_TASK,
+    'weight'           => 1,
   );
 
   return $items;

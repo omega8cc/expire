@@ -17,7 +17,7 @@ function expire_admin_settings_form() {
   // COMMON SETTINGS.
   $form['tabs']['status'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Status'),
+    '#title' => t('Module status'),
     '#group' => 'tabs',
     '#weight' => 0,
   );
@@ -47,7 +47,7 @@ function expire_admin_settings_form() {
   // NODE SETTINGS.
   $form['tabs']['node'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Node'),
+    '#title' => t('Node expiration'),
     '#group' => 'tabs',
     '#weight' => 1,
   );
@@ -125,7 +125,7 @@ function expire_admin_settings_form() {
   // COMMENT SETTINGS.
   $form['tabs']['comment'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Comment'),
+    '#title' => t('Comment expiration'),
     '#group' => 'tabs',
     '#weight' => 2,
   );
@@ -211,7 +211,7 @@ function expire_admin_settings_form() {
   // USER SETTINGS.
   $form['tabs']['user'] = array(
     '#type' => 'fieldset',
-    '#title' => t('User'),
+    '#title' => t('User expiration'),
     '#group' => 'tabs',
     '#weight' => 3,
   );
@@ -274,7 +274,7 @@ function expire_admin_settings_form() {
   // VOTINAPI SETTINGS.
   $form['tabs']['votingapi'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Votingapi'),
+    '#title' => t('Votingapi expiration'),
     '#group' => 'tabs',
     '#weight' => 4,
   );
