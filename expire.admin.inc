@@ -320,7 +320,7 @@ function expire_admin_settings_form() {
 /**
  * Settings form for a node type.
  */
-function expire_node_settings_form(&$form, &$form_state) {
+function expire_node_settings_form(&$form) {
 
   if (empty($form['#node_type']->type)) {
     return;
@@ -345,11 +345,8 @@ function expire_node_settings_form(&$form, &$form_state) {
 
   // Copy here settings from default settings form.
   $settings_form = expire_admin_settings_form();
-  $form['expire']['node_actions'] = $settings_form['cache_actions']['node'];
-  $form['expire']['node_expires'] = $settings_form['cache_expire']['node'];
-
-  $form['expire']['node_actions']['#collapsed'] = FALSE;
-  $form['expire']['node_expires']['#collapsed'] = FALSE;
+  $form['expire']['node_actions'] = $settings_form['tabs']['node']['actions'];
+  $form['expire']['node_expires'] = $settings_form['tabs']['node']['expire'];
 
   // Display fieldsets with settings only if they should be overriden.
   $form['expire']['node_actions']['#states'] = array(
@@ -369,11 +366,8 @@ function expire_node_settings_form(&$form, &$form_state) {
     '#default_value' => variable_get('expire_comment_override_defaults_' . $node_type),
   );
 
-  $form['expire']['comment_actions'] = $settings_form['cache_actions']['comment'];
-  $form['expire']['comment_expires'] = $settings_form['cache_expire']['comment'];
-
-  $form['expire']['comment_actions']['#collapsed'] = FALSE;
-  $form['expire']['comment_expires']['#collapsed'] = FALSE;
+  $form['expire']['comment_actions'] = $settings_form['tabs']['comment']['actions'];
+  $form['expire']['comment_expires'] = $settings_form['tabs']['comment']['expire'];
 
   // Display fieldsets with settings only if they should be overriden.
   $form['expire']['comment_actions']['#states'] = array(
