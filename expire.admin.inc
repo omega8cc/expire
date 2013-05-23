@@ -40,6 +40,7 @@ function expire_admin_settings_form() {
       t('Internal expiration: Module will execute cache_clear_all() for expired urls.'),
       t('External expiration: Module will invoke hook_expire_cache() for expired urls.'),
     ))),
+    '#default_value' => variable_get('expire_status', EXPIRE_STATUS_DISABLED),
   );
 
 
