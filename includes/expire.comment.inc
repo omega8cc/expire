@@ -36,7 +36,7 @@ class ExpireComment implements ExpireInterface {
     }
 
     // See if cache settings was overriden for this node type.
-    $settings_overriden = variable_get('memcache_storage_pc_comment_override_defaults_' . $node->type);
+    $settings_overriden = variable_get('expire_comment_override_defaults_' . $node->type);
 
     $variable_suffix = '';
     if (!empty($settings_overriden)) {
@@ -45,7 +45,7 @@ class ExpireComment implements ExpireInterface {
       $variable_suffix = '_' . $node->type;
     }
 
-    $enabled_actions = variable_get('memcache_storage_pc_comment_actions' . $variable_suffix, array());
+    $enabled_actions = variable_get('expire_comment_actions' . $variable_suffix, array());
     $enabled_actions = array_filter($enabled_actions);
 
     // Do not process current action if it is not selected by administrator.
@@ -56,41 +56,41 @@ class ExpireComment implements ExpireInterface {
     $expire_urls = array();
 
     // Expire front page.
-    $expire_front_page = variable_get('memcache_storage_pc_comment_expire_front_page' . $variable_suffix, MEMCACHE_STORAGE_PC_COMMENT_EXPIRE_FRONT_PAGE);
+    $expire_front_page = variable_get('expire_comment_front_page' . $variable_suffix, EXPIRE_COMMENT_FRONT_PAGE);
     if ($expire_front_page) {
       $expire_urls['front'] = '<front>';
     }
 
     // Expire comment page.
-    $expire_comment_page = variable_get('memcache_storage_pc_comment_expire_comment_page' . $variable_suffix, MEMCACHE_STORAGE_PC_COMMENT_EXPIRE_COMMENT_PAGE);
+    $expire_comment_page = variable_get('expire_comment_comment_page' . $variable_suffix, EXPIRE_COMMENT_COMMENT_PAGE);
     if ($expire_comment_page) {
       $expire_urls['comment-' . $comment->cid] = 'comment/' . $comment->cid;
     }
 
     // Expire comment's node page.
-    $expire_node_page = variable_get('memcache_storage_pc_comment_expire_node_page' . $variable_suffix, MEMCACHE_STORAGE_PC_COMMENT_EXPIRE_NODE_PAGE);
+    $expire_node_page = variable_get('expire_comment_node_page' . $variable_suffix, EXPIRE_COMMENT_NODE_PAGE);
     if ($expire_node_page) {
       $expire_urls['node-' . $comment->nid] = 'node/' . $comment->nid;
     }
 
     // Expire comment's node term pages.
-    $expire_node_term_pages = variable_get('memcache_storage_pc_comment_expire_node_term_pages' . $variable_suffix, MEMCACHE_STORAGE_PC_COMMENT_EXPIRE_NODE_TERM_PAGES);
+    $expire_node_term_pages = variable_get('expire_comment_node_term_pages' . $variable_suffix, EXPIRE_COMMENT_NODE_TERM_PAGES);
     if (module_exists('taxonomy') && $expire_node_term_pages) {
       $urls = ExpireAPI::expireNodeTermPages($node);
       $expire_urls = array_merge($expire_urls, $urls);
     }
 
     // Expire comment's node references.
-    $expire_node_references = variable_get('memcache_storage_pc_comment_expire_node_reference_pages' . $variable_suffix, MEMCACHE_STORAGE_PC_COMMENT_EXPIRE_NODE_REFERENCE_PAGES);
+    $expire_node_references = variable_get('expire_comment_node_reference_pages' . $variable_suffix, EXPIRE_COMMENT_NODE_REFERENCE_PAGES);
     if (module_exists('node_reference') && $expire_node_references) {
       $urls = ExpireAPI::expireNodeReferences($node);
       $expire_urls = array_merge($expire_urls, $urls);
     }
 
     // Expire custom pages.
-    $expire_custom_urls = variable_get('memcache_storage_pc_comment_expire_custom' . $variable_suffix, MEMCACHE_STORAGE_PC_COMMENT_EXPIRE_CUSTOM);
-    if ($expire_custom_urls) {
-      $pages = variable_get('memcache_storage_pc_comment_expire_custom_pages' . $variable_suffix);
+    $expire_custom = variable_get('expire_comment_custom' . $variable_suffix, EXPIRE_COMMENT_CUSTOM);
+    if ($expire_custom) {
+      $pages = variable_get('expire_comment_custom_pages' . $variable_suffix);
       $urls = ExpireAPI::expireCustomPages($pages, array('comment' => $comment));
       $expire_urls = array_merge($expire_urls, $urls);
     }
