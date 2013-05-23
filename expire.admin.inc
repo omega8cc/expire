@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Settings form for CACHE EXPIRATION module.
+ * Settings forms for the Expire module.
  */
 
 /**
@@ -10,20 +10,53 @@
  */
 function expire_admin_settings_form() {
 
-  $form['cache_actions'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Cache expiration actions'),
-    '#collapsible' => TRUE,
+  $form['tabs'] = array(
+    '#type' => 'vertical_tabs',
   );
 
-  $form['cache_actions']['node'] = array(
+  // COMMON SETTINGS.
+  $form['tabs']['status'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Status'),
+    '#group' => 'tabs',
+    '#weight' => 0,
+  );
+
+  $form['tabs']['status']['common'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Common settings'),
+  );
+
+  $form['tabs']['status']['common']['expire_status'] = array(
+    '#type' => 'radios',
+    '#title' => t('Status'),
+    '#options' => array(
+      EXPIRE_STATUS_DISABLED => t('Disabled'),
+      EXPIRE_STATUS_ENABLED_INTERNAL => t('Internal expiration'),
+      EXPIRE_STATUS_ENABLED_EXTERNAL => t('External expiration'),
+    ),
+    '#description' => theme('item_list', array('items' => array(
+      t('Disabled: Module will not take any effect.'),
+      t('Internal expiration: Module will execute cache_clear_all() for expired urls.'),
+      t('External expiration: Module will invoke hook_expire_cache() for expired urls.'),
+    ))),
+  );
+
+
+  // NODE SETTINGS.
+  $form['tabs']['node'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Node'),
+    '#group' => 'tabs',
+    '#weight' => 1,
+  );
+
+  $form['tabs']['node']['actions'] = array(
     '#type' => 'fieldset',
     '#title' => t('Node actions'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
   );
 
-  $form['cache_actions']['node']['expire_node_actions'] = array(
+  $form['tabs']['node']['actions']['expire_node_actions'] = array(
     '#type' => 'checkboxes',
     '#description' => t('Page cache for node will be expired after selected actions.'),
     '#options' => array(
@@ -34,74 +67,25 @@ function expire_admin_settings_form() {
     '#default_value' => variable_get('expire_node_actions', array()),
   );
 
-  $form['cache_actions']['comment'] = array(
+  $form['tabs']['node']['expire'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Comment actions'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+    '#title' => t('What URLs should be expired when node action is triggered?'),
   );
 
-  $form['cache_actions']['comment']['expire_comment_actions'] = array(
-    '#type' => 'checkboxes',
-    '#description' => t('Page cache for comment will be expired after selected actions.'),
-    '#options' => array(
-      EXPIRE_COMMENT_INSERT => t('Comment insert'),
-      EXPIRE_COMMENT_UPDATE => t('Comment update'),
-      EXPIRE_COMMENT_DELETE => t('Comment delete'),
-      EXPIRE_COMMENT_PUBLISH => t('Comment publish'),
-      EXPIRE_COMMENT_UNPUBLISH => t('Comment unpublish'),
-    ),
-    '#default_value' => variable_get('expire_comment_actions', array()),
-  );
-
-  $form['cache_actions']['user'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('User actions'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-  );
-
-  $form['cache_actions']['user']['expire_user_actions'] = array(
-    '#type' => 'checkboxes',
-    '#description' => t('Page cache for user will be expired after selected actions.'),
-    '#options' => array(
-      EXPIRE_USER_INSERT => t('User insert'),
-      EXPIRE_USER_UPDATE => t('User update'),
-      EXPIRE_USER_DELETE => t('User delete'),
-      EXPIRE_USER_CANCEL => t('User cancel'),
-    ),
-    '#default_value' => variable_get('expire_user_actions', array()),
-  );
-
-  $form['cache_expire'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('What pages should be expired?'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-  );
-
-  // NODE ACTION.
-  $form['cache_expire']['node'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('After node action'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
-  );
-
-  $form['cache_expire']['node']['expire_node_front_page'] = array(
+  $form['tabs']['node']['expire']['expire_node_front_page'] = array(
     '#type' => 'checkbox',
     '#title' => t('Front page'),
     '#default_value' => variable_get('expire_node_front_page', EXPIRE_NODE_FRONT_PAGE),
   );
 
-  $form['cache_expire']['node']['expire_node_node_page'] = array(
+  $form['tabs']['node']['expire']['expire_node_node_page'] = array(
     '#type' => 'checkbox',
     '#title' => t('Node page'),
     '#default_value' => variable_get('expire_node_node_page', EXPIRE_NODE_NODE_PAGE),
   );
 
   if (module_exists('taxonomy')) {
-    $form['cache_expire']['node']['expire_node_term_pages'] = array(
+    $form['tabs']['node']['expire']['expire_node_term_pages'] = array(
       '#type' => 'checkbox',
       '#title' => t('Node term pages'),
       '#default_value' => variable_get('expire_node_term_pages', EXPIRE_NODE_TERM_PAGES),
@@ -109,20 +93,20 @@ function expire_admin_settings_form() {
   }
 
   if (module_exists('node_reference')) {
-    $form['cache_expire']['node']['expire_node_reference_pages'] = array(
+    $form['tabs']['node']['expire']['expire_node_reference_pages'] = array(
       '#type' => 'checkbox',
       '#title' => t('Node reference pages'),
       '#default_value' => variable_get('expire_node_reference_pages', EXPIRE_NODE_REFERENCE_PAGES),
     );
   }
 
-  $form['cache_expire']['node']['expire_node_custom'] = array(
+  $form['tabs']['node']['expire']['expire_node_custom'] = array(
     '#type' => 'checkbox',
     '#title' => t('Custom pages'),
     '#default_value' => variable_get('expire_node_custom', EXPIRE_NODE_CUSTOM),
   );
 
-  $form['cache_expire']['node']['expire_node_custom_pages'] = array(
+  $form['tabs']['node']['expire']['expire_node_custom_pages'] = array(
     '#type' => 'textarea',
     '#title' => t('Enter custom urls'),
     '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>node/[node:nid]</strong>')) . '<br/>'
@@ -136,34 +120,58 @@ function expire_admin_settings_form() {
     '#default_value' => variable_get('expire_node_custom_pages'),
   );
 
-  // COMMENT ACTION.
-  $form['cache_expire']['comment'] = array(
+
+  // COMMENT SETTINGS.
+  $form['tabs']['comment'] = array(
     '#type' => 'fieldset',
-    '#title' => t('After comment action'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+    '#title' => t('Comment'),
+    '#group' => 'tabs',
+    '#weight' => 2,
   );
 
-  $form['cache_expire']['comment']['expire_comment_front_page'] = array(
+  $form['tabs']['comment']['actions'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Comment actions'),
+  );
+
+  $form['tabs']['comment']['actions']['expire_comment_actions'] = array(
+    '#type' => 'checkboxes',
+    '#description' => t('Page cache for comment will be expired after selected actions.'),
+    '#options' => array(
+      EXPIRE_COMMENT_INSERT => t('Comment insert'),
+      EXPIRE_COMMENT_UPDATE => t('Comment update'),
+      EXPIRE_COMMENT_DELETE => t('Comment delete'),
+      EXPIRE_COMMENT_PUBLISH => t('Comment publish'),
+      EXPIRE_COMMENT_UNPUBLISH => t('Comment unpublish'),
+    ),
+    '#default_value' => variable_get('expire_comment_actions', array()),
+  );
+
+  $form['tabs']['comment']['expire'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('What URLs should be expired when comment action is triggered?'),
+  );
+
+  $form['tabs']['comment']['expire']['expire_comment_front_page'] = array(
     '#type' => 'checkbox',
     '#title' => t('Front page'),
     '#default_value' => variable_get('expire_comment_front_page', EXPIRE_COMMENT_FRONT_PAGE),
   );
 
-  $form['cache_expire']['comment']['expire_comment_comment_page'] = array(
+  $form['tabs']['comment']['expire']['expire_comment_comment_page'] = array(
     '#type' => 'checkbox',
     '#title' => t('Comment page'),
     '#default_value' => variable_get('expire_comment_comment_page', EXPIRE_COMMENT_COMMENT_PAGE),
   );
 
-  $form['cache_expire']['comment']['expire_comment_node_page'] = array(
+  $form['tabs']['comment']['expire']['expire_comment_node_page'] = array(
     '#type' => 'checkbox',
     '#title' => t('Comment\'s node page'),
     '#default_value' => variable_get('expire_comment_node_page', EXPIRE_COMMENT_NODE_PAGE),
   );
 
   if (module_exists('taxonomy')) {
-    $form['cache_expire']['comment']['expire_comment_node_term_pages'] = array(
+    $form['tabs']['comment']['expire']['expire_comment_node_term_pages'] = array(
       '#type' => 'checkbox',
       '#title' => t('Comment\'s node term pages'),
       '#default_value' => variable_get('expire_comment_node_term_pages', EXPIRE_COMMENT_NODE_TERM_PAGES),
@@ -171,20 +179,20 @@ function expire_admin_settings_form() {
   }
 
   if (module_exists('node_reference')) {
-    $form['cache_expire']['comment']['expire_comment_node_reference_pages'] = array(
+    $form['tabs']['comment']['expire']['expire_comment_node_reference_pages'] = array(
       '#type' => 'checkbox',
       '#title' => t('Comment\'s node reference pages'),
       '#default_value' => variable_get('expire_comment_node_reference_pages', EXPIRE_COMMENT_NODE_REFERENCE_PAGES),
     );
   }
 
-  $form['cache_expire']['comment']['expire_comment_custom'] = array(
+  $form['tabs']['comment']['expire']['expire_comment_custom'] = array(
     '#type' => 'checkbox',
     '#title' => t('Custom pages'),
     '#default_value' => variable_get('expire_comment_custom', EXPIRE_COMMENT_CUSTOM),
   );
 
-  $form['cache_expire']['comment']['expire_comment_custom_pages'] = array(
+  $form['tabs']['comment']['expire']['expire_comment_custom_pages'] = array(
     '#type' => 'textarea',
     '#title' => t('Enter custom urls'),
     '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>comment/[comment:cid]</strong>')) . '<br/>'
@@ -198,33 +206,56 @@ function expire_admin_settings_form() {
     '#default_value' => variable_get('expire_comment_custom_pages'),
   );
 
-  // USER ACTION.
-  $form['cache_expire']['user'] = array(
+
+  // USER SETTINGS.
+  $form['tabs']['user'] = array(
     '#type' => 'fieldset',
-    '#title' => t('After user action'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+    '#title' => t('User'),
+    '#group' => 'tabs',
+    '#weight' => 3,
   );
 
-  $form['cache_expire']['user']['expire_user_front_page'] = array(
+  $form['tabs']['user']['actions'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('User actions'),
+  );
+
+  $form['tabs']['user']['actions']['expire_user_actions'] = array(
+    '#type' => 'checkboxes',
+    '#description' => t('Page cache for user will be expired after selected actions.'),
+    '#options' => array(
+      EXPIRE_USER_INSERT => t('User insert'),
+      EXPIRE_USER_UPDATE => t('User update'),
+      EXPIRE_USER_DELETE => t('User delete'),
+      EXPIRE_USER_CANCEL => t('User cancel'),
+    ),
+    '#default_value' => variable_get('expire_user_actions', array()),
+  );
+
+  $form['tabs']['user']['expire'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('What URLs should be expired when user action is triggered?'),
+  );
+
+  $form['tabs']['user']['expire']['expire_user_front_page'] = array(
     '#type' => 'checkbox',
     '#title' => t('Front page'),
     '#default_value' => variable_get('expire_user_front_page', EXPIRE_USER_FRONT_PAGE),
   );
 
-  $form['cache_expire']['user']['expire_user_user_page'] = array(
+  $form['tabs']['user']['expire']['expire_user_user_page'] = array(
     '#type' => 'checkbox',
     '#title' => t('User page'),
     '#default_value' => variable_get('expire_user_user_page', EXPIRE_USER_USER_PAGE),
   );
 
-  $form['cache_expire']['user']['expire_user_custom'] = array(
+  $form['tabs']['user']['expire']['expire_user_custom'] = array(
     '#type' => 'checkbox',
     '#title' => t('Custom pages'),
     '#default_value' => variable_get('expire_user_custom', EXPIRE_USER_CUSTOM),
   );
 
-  $form['cache_expire']['user']['expire_user_custom_pages'] = array(
+  $form['tabs']['user']['expire']['expire_user_custom_pages'] = array(
     '#type' => 'textarea',
     '#title' => t('Enter custom urls'),
     '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>user/[user:uid]</strong>')) . '<br/>'
@@ -238,16 +269,48 @@ function expire_admin_settings_form() {
     '#default_value' => variable_get('expire_user_custom_pages'),
   );
 
+
+  // VOTINAPI SETTINGS.
+  $form['tabs']['votingapi'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Votingapi'),
+    '#group' => 'tabs',
+    '#weight' => 4,
+  );
+
+  $form['tabs']['votingapi']['actions'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Votingapi actions'),
+  );
+
+  $form['tabs']['votingapi']['actions']['expire_votingapi_actions'] = array(
+    '#type' => 'checkboxes',
+    '#description' => t('Page cache for user will be expired after selected actions.'),
+    '#options' => array(
+      EXPIRE_VOTINGAPI_INSERT=> t('Vote insert'),
+      EXPIRE_VOTINGAPI_DELETE => t('Vote delete'),
+    ),
+    '#default_value' => variable_get('expire_votingapi_actions', array()),
+  );
+
+  $form['tabs']['votingapi']['expire'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('What URLs should be expired when votingapi action is triggered?'),
+  );
+
+  // @todo: votingapi expirations.
+
+
   // Add the token tree UI.
   if (module_exists('token')) {
 
-    $form['cache_expire']['node']['expire_node_custom_pages']['#description'] .= ' ' .
+    $form['tabs']['node']['expire']['expire_node_custom_pages']['#description'] .= ' ' .
       theme('token_tree_link', array('text' => t('View available tokens.'), 'token_types' => array('node')));
 
-    $form['cache_expire']['comment']['expire_comment_custom_pages']['#description'] .= ' ' .
+    $form['tabs']['comment']['expire']['expire_comment_custom_pages']['#description'] .= ' ' .
       theme('token_tree_link', array('text' => t('View available tokens.'), 'token_types' => array('comment')));
 
-    $form['cache_expire']['user']['expire_user_custom_pages']['#description'] .= ' ' .
+    $form['tabs']['user']['expire']['expire_user_custom_pages']['#description'] .= ' ' .
       theme('token_tree_link', array('text' => t('View available tokens.'), 'token_types' => array('user')));
   }
 

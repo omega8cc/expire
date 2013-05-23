@@ -9,6 +9,11 @@
  * Constant definitions.
  */
 
+// Module statuses.
+define('EXPIRE_STATUS_DISABLED', 0);
+define('EXPIRE_STATUS_ENABLED_INTERNAL', 1);
+define('EXPIRE_STATUS_ENABLED_EXTERNAL', 2);
+
 // Node actions.
 define('EXPIRE_NODE_INSERT', 1);
 define('EXPIRE_NODE_UPDATE', 2);
