@@ -11,7 +11,7 @@ class ExpireVotingapi implements ExpireInterface {
    * Common expiry logic for votingapi.
    */
   // @todo: implement.
-  public static function expire($votes, $action) {
+  public function expire($votes, $action) {
     foreach ($votes as $vote) {
       if ($vote['entity_type'] == 'comment') {
         $nid = db_query("SELECT nid FROM {comment} WHERE cid = :cid", array(':cid' => $vote['entity_id']))->fetchField();

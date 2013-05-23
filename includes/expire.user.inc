@@ -16,7 +16,7 @@ class ExpireUser implements ExpireInterface {
    * @param $action
    *   Action that has been executed.
    */
-  public static function expire($user, $action) {
+   function expire($user, $action) {
 
     if (empty($user->uid)) {
       return;

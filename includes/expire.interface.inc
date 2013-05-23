@@ -16,6 +16,6 @@ interface ExpireInterface {
    * @param $action
    *   Action that was executed for the object.
    */
-  public static function expire($object, $action);
+  function expire($object, $action);
 
 }

@@ -16,7 +16,7 @@ class ExpireNode implements ExpireInterface {
    * @param $action
    *   Action that has been executed.
    */
-  public static function expire($node, $action) {
+  function expire($node, $action) {
 
     if (empty($node->nid) || empty($node->type)) {
       return;

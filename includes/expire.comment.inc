@@ -16,7 +16,7 @@ class ExpireComment implements ExpireInterface {
    * @param $action
    *   Action that has been executed.
    */
-  public static function expire($comment, $action) {
+  function expire($comment, $action) {
 
     // Some comment actions may be executed one after another. To avoid
     // duplicate flushes we should check whether cache was already flushed.

@@ -8,7 +8,7 @@
 class ExpireDomain implements ExpireInterface {
 
   // @todo: implement.
-  public static function expire($domain, $action) {
+  function expire($domain, $action) {
 
   }
 
@@ -21,7 +21,7 @@ class ExpireDomain implements ExpireInterface {
    * @return array
    *   List of domains.
    */
-  private static function getDomains($node) {
+  private function getDomains($node) {
     $domains = array();
     if ($node->nid) {
       $result = db_query("SELECT gid FROM {domain_access} WHERE nid = :nid", array(':nid' => $node->nid));
@@ -47,7 +47,7 @@ class ExpireDomain implements ExpireInterface {
    * @return array
    *   List of base urls that should be expired.
    */
-  private static function getBaseUrls($node) {
+  private function getBaseUrls($node) {
 
     // Get list of URL's if using domain access
     $base_urls = array();

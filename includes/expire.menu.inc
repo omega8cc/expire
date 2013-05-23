@@ -8,7 +8,7 @@
 class ExpireMenu implements ExpireInterface {
 
   // @todo: implement.
-  public static function expire($menu, $action) {
+  function expire($menu, $action) {
 
   }
 
@@ -36,7 +36,7 @@ class ExpireMenu implements ExpireInterface {
    *
    * @return array
    */
-  private static function getMenuStructure($menu, $found, $needle, $first, &$found_global, &$menu_out) {
+  private function getMenuStructure($menu, $found, $needle, $first, &$found_global, &$menu_out) {
     // Set Defaults
     $found = !is_null($found) ? $found : TRUE;
     $needle = !is_null($needle) ? $needle : '';
@@ -106,5 +106,3 @@ class ExpireMenu implements ExpireInterface {
   }
 
 }
-
-
