@@ -8,12 +8,39 @@
 class ExpireAPI {
 
   /**
-   * Flush page cache for a given urls.
+   * Executes internal or external cache expiration.
    *
    * @param $urls
-   *   List of urls that should be flushed.
+   *   List of internal urls that should be flushed.
+   *
+   * @param $object_type
+   *  Name of object type ('node', 'comment', 'user', etc).
+   *
+   * @param $object
+   *   Object (node, comment, user, etc) for which expiration is executes.
    */
-  public static function flushCache($urls) {
+  public static function flushCache($urls, $object_type = '', $object = NULL) {
+
+    // Allow other modules to modify the list prior to expiring
+    drupal_alter('expire_cache', $urls, $object_type, $object);
+
+    $status = variable_get('expire_status', EXPIRE_STATUS_DISABLED);
+    if ($status == EXPIRE_STATUS_ENABLED_INTERNAL) {
+      self::executeInternalExpiration($urls);
+    }
+    elseif ($status == EXPIRE_STATUS_ENABLED_EXTERNAL) {
+      self::executeExternalExpiration($urls, $object_type, $object);
+    }
+  }
+
+  /**
+   * Execute internal urls expiration.
+   * Calls cache_clear_all().
+   *
+   * @param $urls
+   *   List of internal urls that should be flushed.
+   */
+  protected static function executeInternalExpiration($urls) {
     foreach ($urls as $url) {
 
       // Every URL may contain |wildcard suffix, so we should check this.
@@ -35,6 +62,27 @@ class ExpireAPI {
   }
 
   /**
+   * Executes hook_cache_expire().
+   *
+   * It allows other modules to implement custom login for cache expiration.
+   *
+   * @param $urls
+   *   List of internal urls that should be flushed.
+   *
+   * @param $object_type
+   *  Name of object type ('node', 'comment', 'user', etc).
+   *
+   * @param $object
+   *   Object (node, comment, user, etc) for which expiration is executes.
+   */
+  protected static function executeExternalExpiration($urls, $object_type, $object) {
+    $modules = module_implements('expire_cache');
+    foreach ($modules as $module) {
+      module_invoke($module, 'expire_cache', $urls, $object_type, $object);
+    }
+  }
+
+  /**
    * Find all taxonomy terms in node fields and build urls for them.
    *
    * @param $node
@@ -43,7 +91,7 @@ class ExpireAPI {
    * @return array
    *   Term urls that should be flushed.
    */
-  public  static function expireNodeTermPages($node) {
+  public static function expireNodeTermPages($node) {
 
     $terms = array();
     $field_info = field_info_fields();
