@@ -28,7 +28,7 @@ function expire_admin_settings_form() {
   );
 
   $form['tabs']['status']['common']['expire_status'] = array(
-    '#type' => 'radios',
+    '#type' => 'select',
     '#title' => t('Status'),
     '#options' => array(
       EXPIRE_STATUS_DISABLED => t('Disabled'),
@@ -115,7 +115,7 @@ function expire_admin_settings_form() {
       . t('You may use tokens here.'),
     '#states' => array(
       'visible' => array(
-        ':input[name="expire_node_expire_custom"]' => array('checked' => TRUE),
+        ':input[name="expire_node_custom"]' => array('checked' => TRUE),
       ),
     ),
     '#default_value' => variable_get('expire_node_custom_pages'),
@@ -201,7 +201,7 @@ function expire_admin_settings_form() {
       . t('You may use tokens here.'),
     '#states' => array(
       'visible' => array(
-        ':input[name="expire_comment_expire_custom"]' => array('checked' => TRUE),
+        ':input[name="expire_comment_custom"]' => array('checked' => TRUE),
       ),
     ),
     '#default_value' => variable_get('expire_comment_custom_pages'),
@@ -264,7 +264,7 @@ function expire_admin_settings_form() {
       . t('You may use tokens here.'),
     '#states' => array(
       'visible' => array(
-        ':input[name="expire_user_expire_custom"]' => array('checked' => TRUE),
+        ':input[name="expire_user_custom"]' => array('checked' => TRUE),
       ),
     ),
     '#default_value' => variable_get('expire_user_custom_pages'),
@@ -272,34 +272,60 @@ function expire_admin_settings_form() {
 
 
   // VOTINAPI SETTINGS.
-  $form['tabs']['votingapi'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Votingapi expiration'),
-    '#group' => 'tabs',
-    '#weight' => 4,
-  );
+  if (module_exists('votingapi')) {
+    $form['tabs']['votingapi'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Votingapi expiration'),
+      '#group' => 'tabs',
+      '#weight' => 4,
+    );
 
-  $form['tabs']['votingapi']['actions'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Votingapi actions'),
-  );
+    $form['tabs']['votingapi']['actions'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Votingapi actions'),
+    );
 
-  $form['tabs']['votingapi']['actions']['expire_votingapi_actions'] = array(
-    '#type' => 'checkboxes',
-    '#description' => t('Page cache for user will be expired after selected actions.'),
-    '#options' => array(
-      EXPIRE_VOTINGAPI_INSERT=> t('Vote insert'),
-      EXPIRE_VOTINGAPI_DELETE => t('Vote delete'),
-    ),
-    '#default_value' => variable_get('expire_votingapi_actions', array()),
-  );
+    $form['tabs']['votingapi']['actions']['expire_votingapi_actions'] = array(
+      '#type' => 'checkboxes',
+      '#description' => t('Page cache for votes will be expired after selected actions.'),
+      '#options' => array(
+        EXPIRE_VOTINGAPI_INSERT=> t('Vote insert'),
+        EXPIRE_VOTINGAPI_DELETE => t('Vote delete'),
+      ),
+      '#default_value' => variable_get('expire_votingapi_actions', array()),
+    );
 
-  $form['tabs']['votingapi']['expire'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('What URLs should be expired when votingapi action is triggered?'),
-  );
+    $form['tabs']['votingapi']['expire'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('What URLs should be expired when votingapi action is triggered?'),
+    );
 
-  // @todo: votingapi expirations.
+    $form['tabs']['votingapi']['expire']['expire_votingapi_entity'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Voted entity page'),
+      '#default_value' => variable_get('expire_votingapi_entity', EXPIRE_VOTINGAPI_ENTITY),
+    );
+
+    $form['tabs']['votingapi']['expire']['expire_votingapi_custom'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Custom pages'),
+      '#default_value' => variable_get('expire_votingapi_custom', EXPIRE_VOTINGAPI_CUSTOM),
+    );
+
+    $form['tabs']['votingapi']['expire']['expire_votingapi_custom_pages'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Enter custom urls'),
+      '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>user/[user:uid]</strong>')) . '<br/>'
+        . t('If you want to use wildcard flush, add |wildcard to the end of the line. Example: !example', array('!example' => '<strong>user/[user:uid]|wildcard</strong>')) . '<br/>'
+        . t('You may use tokens here.'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="expire_votingapi_custom"]' => array('checked' => TRUE),
+        ),
+      ),
+      '#default_value' => variable_get('expire_votingapi_custom_pages'),
+    );
+  }
 
 
   // Add the token tree UI.
@@ -313,6 +339,11 @@ function expire_admin_settings_form() {
 
     $form['tabs']['user']['expire']['expire_user_custom_pages']['#description'] .= ' ' .
       theme('token_tree_link', array('text' => t('View available tokens.'), 'token_types' => array('user')));
+
+    if (module_exists('votingapi')) {
+      $form['tabs']['votingapi']['expire']['expire_votingapi_custom_pages']['#description'] .= ' ' .
+        theme('token_tree_link', array('text' => t('View available tokens.')));
+    }
   }
 
   return system_settings_form($form);
