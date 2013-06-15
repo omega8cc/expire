@@ -8,26 +8,69 @@
 class ExpireVotingapi implements ExpireInterface {
 
   /**
-   * Common expiry logic for votingapi.
+   * Common expiry logic for VotingAPI votes.
    */
-  // @todo: implement.
   public function expire($votes, $action) {
+
+    if (empty($votes)) {
+      return;
+    }
+
+    $enabled_actions = variable_get('expire_votingapi_actions', array());
+    $enabled_actions = array_filter($enabled_actions);
+
+    // Do not process current action if it is not selected by administrator.
+    if (!in_array($action, $enabled_actions)) {
+      return;
+    }
+
+    $expire_urls = array();
+
     foreach ($votes as $vote) {
-      if ($vote['entity_type'] == 'comment') {
-        $nid = db_query("SELECT nid FROM {comment} WHERE cid = :cid", array(':cid' => $vote['entity_id']))->fetchField();
-        if (is_numeric($nid)) {
-          $node = node_load($nid);
-          if ($node) {
-            expire_node($node);
+
+      $entity_type = $vote['entity_type'];
+      $entity_id = $vote['entity_id'];
+
+      // Expire voted entity url.
+      $expire_entity_page = variable_get('expire_votingapi_entity', EXPIRE_VOTINGAPI_ENTITY);
+      if ($expire_entity_page) {
+
+        $entities = entity_load($entity_type, array($entity_id));
+
+        // Check whether entity is loaded.
+        if (isset($entities[$entity_id])) {
+          $entity = $entities[$entity_id];
+
+          // Check whether entity has uri.
+          $uri = entity_uri($entity_type, $entity);
+          if (!empty($uri['path'])) {
+            $expire_urls['vote-' . $entity_type . '-' . $entity_id] = $uri['path'];
           }
         }
       }
-      if ($vote['entity_type'] == 'node') {
-        $node = node_load($vote['entity_id']);
-        if ($node) {
-          expire_node($node);
+
+      // Expire custom pages.
+      $expire_custom = variable_get('expire_votingapi_custom', EXPIRE_VOTINGAPI_CUSTOM);
+      if ($expire_custom) {
+        $pages = variable_get('expire_votingapi_custom_pages');
+
+        // Load voted entity.
+        $entities = entity_load($entity_type, array($entity_id));
+
+        // Check whether entity is loaded.
+        if (isset($entities[$entity_id])) {
+          $entity = $entities[$entity_id];
+
+          $urls = ExpireAPI::expireCustomPages($pages, array($entity_type => $entity));
+          $expire_urls = array_merge($expire_urls, $urls);
         }
       }
+
+    }
+
+    // Flush page cache for expired urls.
+    if (!empty($expire_urls)) {
+      ExpireAPI::flushCache($expire_urls, 'votingapi', $votes);
     }
   }
 

@@ -51,6 +51,8 @@ define('EXPIRE_COMMENT_CUSTOM'              , FALSE);
 define('EXPIRE_USER_FRONT_PAGE'             , FALSE);
 define('EXPIRE_USER_USER_PAGE'              , TRUE);
 define('EXPIRE_USER_CUSTOM'                 , FALSE);
+define('EXPIRE_VOTINGAPI_ENTITY'            , FALSE);
+define('EXPIRE_VOTINGAPI_CUSTOM'            , FALSE);
 
 /**
  * Implementation of hook_menu().
@@ -172,7 +174,6 @@ function expire_user_cancel($account) {
  * Implements hook_votingapi_insert().
  */
 function expire_votingapi_insert($votes) {
-  // @todo: implement.
   expire_execute_expiration('votingapi', $votes, EXPIRE_VOTINGAPI_INSERT);
 }
 
@@ -180,7 +181,6 @@ function expire_votingapi_insert($votes) {
  * Implements hook_votingapi_delete().
  */
 function expire_votingapi_delete($votes) {
-  // @todo: implement.
   expire_execute_expiration('votingapi', $votes, EXPIRE_VOTINGAPI_DELETE);
 }
 
@@ -188,7 +188,11 @@ function expire_votingapi_delete($votes) {
  * Execute expiration method for object.
  */
 function expire_execute_expiration($type, $object, $action) {
-  return _expiration_get_object($type)->expire($object, $action);
+  $status = variable_get('expire_status', EXPIRE_STATUS_DISABLED);
+  if ($status) {
+    return _expiration_get_object($type)->expire($object, $action);
+  }
+  return FALSE;
 }
 
 /**
