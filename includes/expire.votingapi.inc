@@ -16,6 +16,13 @@ class ExpireVotingapi implements ExpireInterface {
       return;
     }
 
+    // Some vote actions may be executed one after another. To avoid
+    // duplicate flushes we should check whether cache was already flushed.
+    static $cache_flushed = FALSE;
+    if ($cache_flushed) {
+      return;
+    }
+
     $enabled_actions = variable_get('expire_votingapi_actions', array());
     $enabled_actions = array_filter($enabled_actions);
 
@@ -72,6 +79,8 @@ class ExpireVotingapi implements ExpireInterface {
     if (!empty($expire_urls)) {
       ExpireAPI::flushCache($expire_urls, 'votingapi', $votes);
     }
+
+    $cache_flushed = TRUE;
   }
 
 }
