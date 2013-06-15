@@ -35,12 +35,12 @@ class ExpireComment implements ExpireInterface {
       return;
     }
 
-    // See if cache settings was overriden for this node type.
-    $settings_overriden = variable_get('expire_comment_override_defaults_' . $node->type);
+    // See if cache settings was overridden for this node type.
+    $settings_overridden = variable_get('expire_comment_override_defaults_' . $node->type);
 
     $variable_suffix = '';
-    if (!empty($settings_overriden)) {
-      // If page cache settings was overriden for this node type we
+    if (!empty($settings_overridden)) {
+      // If page cache settings was overridden for this node type we
       // should add "_[NODE-TYPE]" to every variable name we use here.
       $variable_suffix = '_' . $node->type;
     }
@@ -97,7 +97,7 @@ class ExpireComment implements ExpireInterface {
 
     // Flush page cache for expired urls.
     if (!empty($expire_urls)) {
-      ExpireAPI::flushCache($expire_urls);
+      ExpireAPI::flushCache($expire_urls, 'comment', $comment);
     }
 
     $cache_flushed = TRUE;

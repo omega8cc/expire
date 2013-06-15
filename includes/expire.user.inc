@@ -54,7 +54,7 @@ class ExpireUser implements ExpireInterface {
 
     // Flush page cache for expired urls.
     if (!empty($expire_urls)) {
-      ExpireAPI::flushCache($expire_urls);
+      ExpireAPI::flushCache($expire_urls, 'user', $user);
     }
   }
 
