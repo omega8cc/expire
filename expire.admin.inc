@@ -10,6 +10,8 @@
  */
 function expire_admin_settings_form() {
 
+  drupal_set_title(t('Cache Expiration'));
+
   $form['tabs'] = array(
     '#type' => 'vertical_tabs',
   );
@@ -28,8 +30,8 @@ function expire_admin_settings_form() {
   );
 
   $form['tabs']['status']['common']['expire_status'] = array(
-    '#type' => 'select',
-    '#title' => t('Status'),
+    '#type' => 'radios',
+    '#title' => t('Status of implementation'),
     '#options' => array(
       EXPIRE_STATUS_DISABLED => t('Disabled'),
       EXPIRE_STATUS_ENABLED_INTERNAL => t('Internal expiration'),
@@ -41,6 +43,18 @@ function expire_admin_settings_form() {
       t('External expiration: Module will invoke hook_expire_cache() for expired urls.'),
     ))),
     '#default_value' => variable_get('expire_status', EXPIRE_STATUS_DISABLED),
+  );
+
+  $modules = array();
+  foreach (module_implements('expire_cache') as $module) {
+    $modules[] = $module;
+  }
+
+  $form['tabs']['status']['common']['external_implementations'] = array(
+    '#type' => 'item',
+    '#title' => t('External implementations'),
+    '#description' => t('List of modules that implements hook_expire_cache().'),
+    '#markup' => $modules ? theme('item_list', array('items' => $modules)) : t('There are no implementations.'),
   );
 
 
