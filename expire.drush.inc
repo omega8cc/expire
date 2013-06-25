@@ -54,7 +54,7 @@ function drush_expire_url() {
   unset($full_urls[0]);
 
   // Expire urls.
-  ExpireAPI::flushCache($full_urls);
+  ExpireAPI::executeExpiration($full_urls);
 }
 
 /**
@@ -72,5 +72,6 @@ function drush_expire_path() {
   }
 
   // Expire urls.
-  ExpireAPI::flushCache($full_urls);
+  // @todo: flag about full or internal url?
+  ExpireAPI::executeExpiration($full_urls);
 }

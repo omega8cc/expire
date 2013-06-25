@@ -11,7 +11,7 @@ class ExpireAPI {
    * Executes internal or external cache expiration.
    *
    * @param $urls
-   *   List of internal urls that should be flushed.
+   *   List of internal urls that should be expired.
    *
    * @param $object_type
    *  Name of object type ('node', 'comment', 'user', etc).
@@ -19,7 +19,7 @@ class ExpireAPI {
    * @param $object
    *   Object (node, comment, user, etc) for which expiration is executes.
    */
-  public static function flushCache($urls, $object_type = '', $object = NULL) {
+  public static function executeExpiration($urls, $object_type = '', $object = NULL) {
 
     // Allow other modules to modify the list prior to expiring
     drupal_alter('expire_cache', $urls, $object_type, $object);

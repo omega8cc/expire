@@ -8,9 +8,19 @@
 class ExpireVotingapi implements ExpireInterface {
 
   /**
-   * Common expiry logic for VotingAPI votes.
+   * Executes expiration actions for user.
+   *
+   * @param $votes
+   *   Array of votes.
+   *   See votingapi_set_votes() to get more info about array params.
+   *
+   * @param $action
+   *   Action that has been executed.
+   *
+   * @param $skip_action_check
+   *   Shows whether should we check executed action or just expire node.
    */
-  public function expire($votes, $action) {
+  public function expire($votes, $action, $skip_action_check = FALSE) {
 
     if (empty($votes)) {
       return;
@@ -26,8 +36,8 @@ class ExpireVotingapi implements ExpireInterface {
     $enabled_actions = variable_get('expire_votingapi_actions', array());
     $enabled_actions = array_filter($enabled_actions);
 
-    // Do not process current action if it is not selected by administrator.
-    if (!in_array($action, $enabled_actions)) {
+    // Stop further expiration if executed action is not selected by admin.
+    if (!in_array($action, $enabled_actions) && !$skip_action_check) {
       return;
     }
 
@@ -77,7 +87,7 @@ class ExpireVotingapi implements ExpireInterface {
 
     // Flush page cache for expired urls.
     if (!empty($expire_urls)) {
-      ExpireAPI::flushCache($expire_urls, 'votingapi', $votes);
+      ExpireAPI::executeExpiration($expire_urls, 'votingapi', $votes);
     }
 
     $cache_flushed = TRUE;

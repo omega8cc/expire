@@ -15,7 +15,10 @@ interface ExpireInterface {
    *
    * @param $action
    *   Action that was executed for the object.
+   *
+   * @param $skip_action_check
+   *   Shows whether should we check executed action or just expire node.
    */
-  function expire($object, $action);
+  function expire($object, $action, $skip_action_check = FALSE);
 
 }

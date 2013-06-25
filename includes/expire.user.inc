@@ -15,8 +15,11 @@ class ExpireUser implements ExpireInterface {
    *
    * @param $action
    *   Action that has been executed.
+   *
+   * @param $skip_action_check
+   *   Shows whether should we check executed action or just expire node.
    */
-   function expire($user, $action) {
+   function expire($user, $action, $skip_action_check = FALSE) {
 
     if (empty($user->uid)) {
       return;
@@ -25,8 +28,8 @@ class ExpireUser implements ExpireInterface {
     $enabled_actions = variable_get('expire_user_actions', array());
     $enabled_actions = array_filter($enabled_actions);
 
-    // Do not process current action if it is not selected by administrator.
-    if (!in_array($action, $enabled_actions)) {
+     // Stop further expiration if executed action is not selected by admin.
+    if (!in_array($action, $enabled_actions) && !$skip_action_check) {
       return;
     }
 
@@ -54,7 +57,7 @@ class ExpireUser implements ExpireInterface {
 
     // Flush page cache for expired urls.
     if (!empty($expire_urls)) {
-      ExpireAPI::flushCache($expire_urls, 'user', $user);
+      ExpireAPI::executeExpiration($expire_urls, 'user', $user);
     }
   }
 
