@@ -25,7 +25,7 @@ class ExpireAPI {
   public static function executeExpiration($urls, $object_type = '', $object = NULL, $absolute_urls_passed = FALSE) {
 
     // Allow other modules to modify the list prior to expiring.
-    drupal_alter('expire_cache', $urls, $object_type, $object, $full_urls_passed);
+    drupal_alter('expire_cache', $urls, $object_type, $object, $absolute_urls_passed);
 
     // If was passed array with absolute URLs we should not do any job here.
     if ($absolute_urls_passed) {
