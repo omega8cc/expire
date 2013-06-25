@@ -6,10 +6,11 @@
  */
 
 /**
- * Implementats hook_drush_command().
+ * Implements hook_drush_command().
  */
 function expire_drush_command() {
 
+  // Expire absolute URLs.
   $items['expire-url'] = array(
     'description' => 'Expire fully qualified URLs.',
     'arguments' => array(
@@ -17,13 +18,14 @@ function expire_drush_command() {
     ),
     'examples' => array(
       'drush expire-url http://example.com/testpage.html' => 'Expire a single URL.',
-      'drush xu http://example.com/ http://test.com/logo.jpg' => 'Expire multiple URLs.',
+      'drush xp-url http://example.com/ http://test.com/logo.jpg' => 'Expire multiple URLs.',
     ),
-    'aliases' => array('xu'),
+    'aliases' => array('xp-url'),
     'drupal dependencies' => array('expire'),
-    'callback' => 'drush_expire_url',
+    'callback' => 'drush_expire_absolute_url',
   );
 
+  // Expire internal paths.
   $items['expire-path'] = array(
     'description' => 'Expire a drupal path.',
     'arguments' => array(
@@ -32,14 +34,57 @@ function expire_drush_command() {
     'examples' => array(
       'drush expire-path node/123' => 'Expire a single drupal path.',
       'drush expire-path FRONT' => 'Expire the front page.',
-      'drush xp FRONT node/234 contact' => 'Expire multiple drupal paths.',
+      'drush xp-path FRONT node/234 contact' => 'Expire multiple drupal paths.',
     ),
-    'aliases' => array('xp'),
+    'aliases' => array('xp-path'),
     'drupal dependencies' => array('expire'),
-    'callback' => 'drush_expire_path',
+    'callback' => 'drush_expire_internal_path',
   );
 
-  // @todo: implement other commands for entity expiration.
+  // Expire node objects.
+  $items['expire-node'] = array(
+    'description' => 'Expire a node by node ID.',
+    'arguments' => array(
+      'nids' => 'Numeric node-ids to expire separated by spaces.',
+    ),
+    'examples' => array(
+      'drush expire-node 2' => 'Expire single node by node ID.',
+      'drush xp-node 2 24 612' => 'Expire multiple nodes by node IDs.',
+    ),
+    'aliases' => array('xp-node'),
+    'drupal dependencies' => array('expire'),
+    'callback' => 'drush_expire_node'
+  );
+
+  // Expire user objects.
+  $items['expire-user'] = array(
+    'description' => 'Expire a user by user ID.',
+    'arguments' => array(
+      'uids' => 'Numeric user IDs to expire separated by spaces.',
+    ),
+    'examples' => array(
+      'drush expire-user 2' => 'Expire single user by his ID.',
+      'drush xp-user 2 24 612' => 'Expire multiple users by their IDs.',
+    ),
+    'aliases' => array('xp-user'),
+    'drupal dependencies' => array('expire'),
+    'callback' => 'drush_expire_user'
+  );
+
+  // Expire comment objects.
+  $items['expire-comment'] = array(
+    'description' => 'Expire a comment by comment ID.',
+    'arguments' => array(
+      'cids' => 'Numeric comment IDs to expire separated by spaces.',
+    ),
+    'examples' => array(
+      'drush expire-comment 2' => 'Expire single comment by its ID.',
+      'drush xp-comment 2 24 612' => 'Expire multiple comments by their IDs.',
+    ),
+    'aliases' => array('xp-comment'),
+    'drupal dependencies' => array('expire'),
+    'callback' => 'drush_expire_comment'
+  );
 
   return $items;
 }
@@ -47,31 +92,68 @@ function expire_drush_command() {
 /**
  * Callback for expire-url drush command.
  */
-function drush_expire_url() {
+function drush_expire_absolute_url() {
 
   // Get drush params.
-  $full_urls = drush_get_arguments();
-  unset($full_urls[0]);
+  $absolute_urls = drush_get_arguments();
+  unset($absolute_urls[0]);
 
   // Expire urls.
-  ExpireAPI::executeExpiration($full_urls);
+  ExpireAPI::executeExpiration($absolute_urls, '', NULL, TRUE);
 }
 
 /**
  * Callback for expire-path drush command.
  */
-function drush_expire_path() {
+function drush_expire_internal_path() {
 
-  $paths = drush_get_arguments();
-  unset($paths[0]);
+  // Get drush params.
+  $internal_paths = drush_get_arguments();
+  unset($internal_paths[0]);
 
-  $full_urls = array();
-  foreach ($paths as $path) {
-    $url = $path === 'FRONT' ? '<front>' : $path;
-    $full_urls[] = url($url, array('absolute' => TRUE));
+  foreach ($internal_paths as &$path) {
+    $path = $path === 'FRONT' ? '<front>' : $path;
   }
 
-  // Expire urls.
-  // @todo: flag about full or internal url?
-  ExpireAPI::executeExpiration($full_urls);
+  // Expire internal paths.
+  ExpireAPI::executeExpiration($internal_paths);
+}
+
+/**
+ * Callback for expire-node drush command.
+ */
+function drush_expire_node() {
+  _drush_expire_entity('node');
+}
+
+/**
+ * Callback for expire-user drush command.
+ */
+function drush_expire_user() {
+  _drush_expire_entity('user');
+}
+
+/**
+ * Callback for expire-comment drush command.
+ */
+function drush_expire_comment() {
+  _drush_expire_entity('comment');
+}
+
+/**
+ * Internal function for expiration of all entities.
+ */
+function _drush_expire_entity($entity_type) {
+
+  // Get drush params.
+  $ids = drush_get_arguments();
+  unset($ids[0]);
+
+  $handler = _expiration_get_object($entity_type);
+  $entities = entity_load($entity_type, $ids);
+  if (is_object($handler) && !empty($entities)) {
+    foreach ($entities as $entity) {
+      $handler->expire($entity, 0, $skip_action_check = TRUE);
+    }
+  }
 }
