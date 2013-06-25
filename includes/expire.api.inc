@@ -11,25 +11,37 @@ class ExpireAPI {
    * Executes internal or external cache expiration.
    *
    * @param $urls
-   *   List of internal urls that should be expired.
+   *   List of internal or external urls that should be expired.
    *
    * @param $object_type
    *  Name of object type ('node', 'comment', 'user', etc).
    *
    * @param $object
    *   Object (node, comment, user, etc) for which expiration is executes.
+   *
+   * @param $absolute_urls_passed
+   *   Indicates whether absolute URLs or internal paths were passed.
    */
-  public static function executeExpiration($urls, $object_type = '', $object = NULL) {
+  public static function executeExpiration($urls, $object_type = '', $object = NULL, $absolute_urls_passed = FALSE) {
 
-    // Allow other modules to modify the list prior to expiring
-    drupal_alter('expire_cache', $urls, $object_type, $object);
+    // Allow other modules to modify the list prior to expiring.
+    drupal_alter('expire_cache', $urls, $object_type, $object, $full_urls_passed);
+
+    // If was passed array with absolute URLs we should not do any job here.
+    if ($absolute_urls_passed) {
+      $wildcards = array();
+      $absolute_urls = $urls;
+    }
+    else {
+      list($absolute_urls, $wildcards) = self::convertToAbsoluteUrls($urls);
+    }
 
     $status = variable_get('expire_status', EXPIRE_STATUS_DISABLED);
     if ($status == EXPIRE_STATUS_ENABLED_INTERNAL) {
-      self::executeInternalExpiration($urls);
+      self::executeInternalExpiration($absolute_urls, $wildcards);
     }
     elseif ($status == EXPIRE_STATUS_ENABLED_EXTERNAL) {
-      self::executeExternalExpiration($urls, $object_type, $object);
+      self::executeExternalExpiration($absolute_urls, $wildcards, $object_type, $object);
     }
   }
 
@@ -38,26 +50,19 @@ class ExpireAPI {
    * Calls cache_clear_all().
    *
    * @param $urls
-   *   List of internal urls that should be flushed.
+   *   List of absolute urls that should be flushed.
+   *
+   * @param $wildcards
+   *   List of paths and its wildcard flushes.
    */
-  protected static function executeInternalExpiration($urls) {
-    foreach ($urls as $url) {
+  protected static function executeInternalExpiration($urls, $wildcards) {
+    foreach ($urls as $internal_path => $absolute_url) {
 
-      // Every URL may contain |wildcard suffix, so we should check this.
-      $url_parts = explode('|', $url);
-      if (count($url_parts) > 1) {
-        $wildcard = TRUE;
-        array_pop($url_parts);
-        $url = implode('|', $url_parts);
-      }
-      else {
-        $wildcard = FALSE;
-      }
-
-      $url = url($url, array('absolute' => TRUE));
+      // Check if wildcard is enabled for this URL.
+      $wildcard = !empty($wildcards[$internal_path]);
 
       // Clear cached page data.
-      cache_clear_all($url, 'cache_page', $wildcard);
+      cache_clear_all($absolute_url, 'cache_page', $wildcard);
     }
   }
 
@@ -67,7 +72,10 @@ class ExpireAPI {
    * It allows other modules to implement custom login for cache expiration.
    *
    * @param $urls
-   *   List of internal urls that should be flushed.
+   *   List of absolute urls that should be flushed.
+   *
+   * @param $wildcards
+   *   List of paths and its wildcard flushes.
    *
    * @param $object_type
    *  Name of object type ('node', 'comment', 'user', etc).
@@ -75,10 +83,10 @@ class ExpireAPI {
    * @param $object
    *   Object (node, comment, user, etc) for which expiration is executes.
    */
-  protected static function executeExternalExpiration($urls, $object_type, $object) {
+  protected static function executeExternalExpiration($urls, $wildcards, $object_type, $object) {
     $modules = module_implements('expire_cache');
     foreach ($modules as $module) {
-      module_invoke($module, 'expire_cache', $urls, $object_type, $object);
+      module_invoke($module, 'expire_cache', $urls, $wildcards, $object_type, $object);
     }
   }
 
@@ -185,6 +193,38 @@ class ExpireAPI {
     }
 
     return $urls;
+  }
+
+  /**
+   * Convert internal path to absolute URLs.
+   *
+   * @param $internal_paths
+   *   Array of internal paths.
+   *
+   * @return array
+   */
+  protected static function convertToAbsoluteUrls($internal_paths) {
+
+    $absolute_urls = array();
+    $wildcards = array();
+
+    foreach ($internal_paths as $path) {
+      $wildcard = FALSE;
+
+      // Every URL may contain |wildcard suffix, so we should check this.
+      $path_parts = explode('|', $path);
+      if (sizeof($path_parts) > 1 && $path_parts[sizeof($path_parts) - 1] == 'wildcard') {
+        $wildcard = TRUE;
+        array_pop($path_parts); // Remove 'wildcard' from path.
+        $path = implode('|', $path_parts);
+      }
+
+      // Collect array with information about expired URLs and its wildcards.
+      $absolute_urls[$path] = url($path, array('absolute' => TRUE));
+      $wildcards[$path] = $wildcard;
+    }
+
+    return array($absolute_urls, $wildcards);
   }
 
 }
