@@ -465,5 +465,5 @@ function expire_node_settings_form(&$form) {
     variable_get('expire_comment_custom_pages_' . $node_type);
 
   // Attach js.
-  $form['#attached']['js'][] = drupal_get_path('module', 'expire') . '/js/expire.js';
+  $form['#attached']['js'][] = drupal_get_path('module', 'expire') . '/js/expire.admin.js';
 }

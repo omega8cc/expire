@@ -1,6 +1,6 @@
 (function ($) {
 
-  Drupal.behaviors.expire = {
+  Drupal.behaviors.expireAdmin = {
     attach: function (context, settings) {
 
       $('fieldset#edit-expire', context).drupalSetSummary(function(context) {
