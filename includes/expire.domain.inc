@@ -7,8 +7,8 @@
 
 class ExpireDomain implements ExpireInterface {
 
-  // @todo: implement.
-  function expire($domain, $action) {
+  // @todo: implement some day.
+  function expire($domain, $action, $skip_action_check = FALSE) {
 
   }
 
