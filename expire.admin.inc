@@ -318,7 +318,7 @@ function expire_admin_settings_form() {
       '#type' => 'checkboxes',
       '#description' => t('Page cache for votes will be expired after selected actions.'),
       '#options' => array(
-        EXPIRE_VOTINGAPI_INSERT=> t('Vote insert'),
+        EXPIRE_VOTINGAPI_INSERT => t('Vote insert'),
         EXPIRE_VOTINGAPI_DELETE => t('Vote delete'),
       ),
       '#default_value' => variable_get('expire_votingapi_actions', array()),
@@ -329,9 +329,16 @@ function expire_admin_settings_form() {
       '#title' => t('What URLs should be expired when votingapi action is triggered?'),
     );
 
-    $form['tabs']['votingapi']['expire']['expire_votingapi_entity'] = array(
+    $form['tabs']['votingapi']['expire']['expire_votingapi_entity_page'] = array(
       '#type' => 'checkbox',
       '#title' => t('Voted entity page'),
+      '#default_value' => variable_get('expire_votingapi_entity_page', EXPIRE_VOTINGAPI_ENTITY_PAGE),
+    );
+
+    $form['tabs']['votingapi']['expire']['expire_votingapi_entity'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Voted entity'),
+      '#description' => t('Note that will be executed expiration selected for voted entity type.'),
       '#default_value' => variable_get('expire_votingapi_entity', EXPIRE_VOTINGAPI_ENTITY),
     );
 

@@ -49,20 +49,32 @@ class ExpireVotingapi implements ExpireInterface {
       $entity_id = $vote['entity_id'];
 
       // Expire voted entity url.
-      $expire_entity_page = variable_get('expire_votingapi_entity', EXPIRE_VOTINGAPI_ENTITY);
+      $expire_entity_page = variable_get('expire_votingapi_entity_page', EXPIRE_VOTINGAPI_ENTITY_PAGE);
       if ($expire_entity_page) {
 
-        $entities = entity_load($entity_type, array($entity_id));
+        // Load entity.
+        $entity = entity_load_single($entity_type, $entity_id);
 
         // Check whether entity is loaded.
-        if (isset($entities[$entity_id])) {
-          $entity = $entities[$entity_id];
+        if (!empty($entity)) {
 
           // Check whether entity has uri.
           $uri = entity_uri($entity_type, $entity);
           if (!empty($uri['path'])) {
             $expire_urls['vote-' . $entity_type . '-' . $entity_id] = $uri['path'];
           }
+        }
+      }
+
+      // Execute expiration for voted entity.
+      $expire_entity = variable_get('expire_votingapi_entity', EXPIRE_VOTINGAPI_ENTITY_PAGE);
+      if ($expire_entity) {
+
+        // Load entity.
+        $entity = entity_load_single($entity_type, $entity_id);
+        $handler = _expire_get_expiration_handler($entity_type);
+        if (is_object($handler) && !empty($entity)) {
+          $handler->expire($entity, 0, $skip_action_check = TRUE);
         }
       }
 

@@ -149,7 +149,7 @@ function _drush_expire_entity($entity_type) {
   $ids = drush_get_arguments();
   unset($ids[0]);
 
-  $handler = _expiration_get_object($entity_type);
+  $handler = _expire_get_expiration_handler($entity_type);
   $entities = entity_load($entity_type, $ids);
   if (is_object($handler) && !empty($entities)) {
     foreach ($entities as $entity) {
