@@ -36,6 +36,9 @@ class ExpireAPI {
       list($absolute_urls, $wildcards) = self::convertToAbsoluteUrls($urls);
     }
 
+    // Write some debug information.
+    self::debugLog($absolute_urls, $wildcards, $object_type);
+
     $status = variable_get('expire_status', EXPIRE_STATUS_DISABLED);
     if ($status == EXPIRE_STATUS_ENABLED_INTERNAL) {
       self::executeInternalExpiration($absolute_urls, $wildcards);
@@ -225,6 +228,39 @@ class ExpireAPI {
     }
 
     return array($absolute_urls, $wildcards);
+  }
+
+  /**
+   * Log debug information.
+   *
+   * @param $absolute_urls
+   * @param $wildcards
+   * @param $object_type
+   */
+  protected static function debugLog($absolute_urls, $wildcards, $object_type) {
+
+    $debug = variable_get('expire_debug', EXPIRE_DEBUG_DISABLED);
+    if (empty($debug)) {
+      return;
+    }
+
+    $output_urls = array();
+    foreach ($absolute_urls as $internal_path => $url) {
+      $wildcard = !empty($wildcards[$internal_path]) ? 'true' : 'false';
+      $output_urls[] = t('URL: @url', array('@url' => check_url($url)));
+      $output_urls[] = t('Wildcard: @wildcard', array('@wildcard' => $wildcard));
+      $output_urls[] = t('Expired object: @type', array('@type' => $object_type ? $object_type : '(none)'));
+      $output_urls[] = '--------';
+    }
+
+    // Log debug message in watchdog.
+    $message = t('Expiration was executed for the next URLs: !urls', array('!urls' => theme('item_list', array('items' => $output_urls))));
+    watchdog('expire', $message, array(), WATCHDOG_DEBUG);
+
+    // For development might be useful to print info on screen.
+    if ($debug == EXPIRE_DEBUG_FULL) {
+      drupal_set_message($message);
+    }
   }
 
 }

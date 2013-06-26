@@ -36,6 +36,11 @@ define('EXPIRE_USER_CANCEL', 4);
 define('EXPIRE_VOTINGAPI_INSERT', 1);
 define('EXPIRE_VOTINGAPI_DELETE', 2);
 
+// Debug levels.
+define('EXPIRE_DEBUG_DISABLED', 0);
+define('EXPIRE_DEBUG_WATCHDOG', 1);
+define('EXPIRE_DEBUG_FULL', 2);
+
 // Default values for cache expirations.
 define('EXPIRE_NODE_FRONT_PAGE'             , FALSE);
 define('EXPIRE_NODE_NODE_PAGE'              , TRUE);

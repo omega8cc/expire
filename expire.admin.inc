@@ -57,6 +57,21 @@ function expire_admin_settings_form() {
     '#markup' => $modules ? theme('item_list', array('items' => $modules)) : t('There are no implementations.'),
   );
 
+  $form['tabs']['status']['debug'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Debug'),
+  );
+
+  $form['tabs']['status']['debug']['expire_debug'] = array(
+    '#type' => 'radios',
+    '#title' => t('Debug level'),
+    '#options' => array(
+      EXPIRE_DEBUG_DISABLED => t('Disabled'),
+      EXPIRE_DEBUG_WATCHDOG => t('Watchdog'),
+      EXPIRE_DEBUG_FULL => t('Watchdog + site message'),
+    ),
+    '#default_value' => variable_get('expire_debug', EXPIRE_DEBUG_DISABLED),
+  );
 
   // NODE SETTINGS.
   $form['tabs']['node'] = array(
