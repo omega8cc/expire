@@ -300,6 +300,69 @@ function expire_admin_settings_form() {
   );
 
 
+  // FILE SETTINGS.
+  if (module_exists('file')) {
+    $form['tabs']['file'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('File expiration'),
+      '#group' => 'tabs',
+      '#weight' => 3,
+    );
+
+    $form['tabs']['file']['actions'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('File actions'),
+    );
+
+    $form['tabs']['file']['actions']['expire_file_actions'] = array(
+      '#type' => 'checkboxes',
+      '#description' => t('Page cache for file will be expired after selected actions.'),
+      '#options' => array(
+        EXPIRE_FILE_UPDATE => t('File update'),
+        EXPIRE_FILE_DELETE => t('File delete'),
+      ),
+      '#default_value' => variable_get('expire_file_actions', array()),
+    );
+
+    $form['tabs']['file']['expire'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('What URLs should be expired when file action is triggered?'),
+    );
+
+    $form['tabs']['file']['expire']['expire_file_file'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('File url'),
+      '#default_value' => variable_get('expire_file_file', EXPIRE_FILE_FILE),
+    );
+
+    $form['tabs']['file']['expire']['expire_file_front_page'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Front page'),
+      '#default_value' => variable_get('expire_file_front_page', EXPIRE_FILE_FRONT_PAGE),
+    );
+
+    $form['tabs']['file']['expire']['expire_file_custom'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Custom pages'),
+      '#default_value' => variable_get('expire_file_custom', EXPIRE_FILE_CUSTOM),
+    );
+
+    $form['tabs']['file']['expire']['expire_file_custom_pages'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Enter custom urls'),
+      '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>file/[file:fid]</strong>')) . '<br/>'
+        . t('If you want to use wildcard flush, add |wildcard to the end of the line. Example: !example', array('!example' => '<strong>file/[file:fid]|wildcard</strong>')) . '<br/>'
+        . t('You may use tokens here.'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="expire_file_custom"]' => array('checked' => TRUE),
+        ),
+      ),
+      '#default_value' => variable_get('expire_file_custom_pages'),
+    );
+  }
+
+
   // VOTINAPI SETTINGS.
   if (module_exists('votingapi')) {
     $form['tabs']['votingapi'] = array(
@@ -375,6 +438,11 @@ function expire_admin_settings_form() {
 
     $form['tabs']['user']['expire']['expire_user_custom_pages']['#description'] .= ' ' .
       theme('token_tree_link', array('text' => t('View available tokens.'), 'token_types' => array('user')));
+
+    if (module_exists('file')) {
+      $form['tabs']['file']['expire']['expire_file_custom_pages']['#description'] .= ' ' .
+        theme('token_tree_link', array('text' => t('View available tokens.'), 'token_types' => array('file')));
+    }
 
     if (module_exists('votingapi')) {
       $form['tabs']['votingapi']['expire']['expire_votingapi_custom_pages']['#description'] .= ' ' .

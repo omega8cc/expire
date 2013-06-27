@@ -36,6 +36,10 @@ define('EXPIRE_USER_CANCEL', 4);
 define('EXPIRE_VOTINGAPI_INSERT', 1);
 define('EXPIRE_VOTINGAPI_DELETE', 2);
 
+// File actions.
+define('EXPIRE_FILE_UPDATE', 1);
+define('EXPIRE_FILE_DELETE', 2);
+
 // Debug levels.
 define('EXPIRE_DEBUG_DISABLED', 0);
 define('EXPIRE_DEBUG_WATCHDOG', 1);
@@ -59,6 +63,9 @@ define('EXPIRE_USER_CUSTOM'                 , FALSE);
 define('EXPIRE_VOTINGAPI_ENTITY'            , FALSE);
 define('EXPIRE_VOTINGAPI_ENTITY_PAGE'       , FALSE);
 define('EXPIRE_VOTINGAPI_CUSTOM'            , FALSE);
+define('EXPIRE_FILE_FILE'                   , FALSE);
+define('EXPIRE_FILE_FRONT_PAGE'             , FALSE);
+define('EXPIRE_FILE_CUSTOM'                 , FALSE);
 
 /**
  * Implementation of hook_menu().
@@ -188,6 +195,20 @@ function expire_votingapi_insert($votes) {
  */
 function expire_votingapi_delete($votes) {
   expire_execute_expiration('votingapi', $votes, EXPIRE_VOTINGAPI_DELETE);
+}
+
+/**
+ * Implements hook_file_update().
+ */
+function expire_file_update($file) {
+  expire_execute_expiration('file', $file, EXPIRE_FILE_UPDATE);
+}
+
+/**
+ * Implements hook_file_delete().
+ */
+function expire_file_delete($file) {
+  expire_execute_expiration('file', $file, EXPIRE_FILE_DELETE);
 }
 
 /**
