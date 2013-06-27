@@ -72,20 +72,14 @@ define('EXPIRE_FILE_CUSTOM'                 , FALSE);
  */
 function expire_menu() {
 
-  $items['admin/config/development/performance/default'] = array(
-    'title'            => 'Performance',
-    'type'             => MENU_DEFAULT_LOCAL_TASK,
-    'weight'           => 0,
-  );
-
-  $items['admin/config/development/performance/expire'] = array(
+  $items['admin/config/system/expire'] = array(
     'title'            => 'Cache Expiration',
+    'description'      => 'Settings for expiration of cached pages.',
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array('expire_admin_settings_form'),
     'access arguments' => array('administer site configuration'),
+    'type'             => MENU_NORMAL_ITEM,
     'file'             => 'expire.admin.inc',
-    'type'             => MENU_LOCAL_TASK,
-    'weight'           => 1,
   );
 
   return $items;

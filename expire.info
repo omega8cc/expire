@@ -3,7 +3,7 @@ description = Logic for expiring cached pages.
 package = Performance and scalability
 core = 7.x
 
-configure = admin/config/development/performance/expire
+configure = admin/config/system/expire
 
 files[] = includes/expire.api.inc
 files[] = includes/expire.comment.inc
