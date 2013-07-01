@@ -26,7 +26,7 @@
 function hook_expire_cache($urls, $wildcards, $object_type, $object) {
   foreach ($urls as $url) {
     $full_path = url($url, array('absolute' => TRUE));
-    purge_url($full_path, $wildcards);
+    purge_urls($full_path, $wildcards);
   }
 }
 
