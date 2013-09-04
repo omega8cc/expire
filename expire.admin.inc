@@ -39,8 +39,8 @@ function expire_admin_settings_form() {
     ),
     '#description' => theme('item_list', array('items' => array(
       t('Disabled: Module will not take any effect.'),
-      t('Internal expiration: Module will execute cache_clear_all() for expired urls.'),
-      t('External expiration: Module will invoke hook_expire_cache() for expired urls.'),
+      t('Internal expiration: Module will execute cache_clear_all() for expired URLs.'),
+      t('External expiration: Module will invoke hook_expire_cache() for expired URLs.'),
     ))),
     '#default_value' => variable_get('expire_status', EXPIRE_STATUS_DISABLED),
   );
@@ -138,9 +138,9 @@ function expire_admin_settings_form() {
 
   $form['tabs']['node']['expire']['expire_node_custom_pages'] = array(
     '#type' => 'textarea',
-    '#title' => t('Enter custom urls'),
-    '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>node/[node:nid]</strong>')) . '<br/>'
-      . t('If you want to use wildcard flush, add |wildcard to the end of the line. Example: !example', array('!example' => '<strong>node/[node:nid]|wildcard</strong>')) . '<br/>'
+    '#title' => t('Enter custom URLs'),
+    '#description' => t('Enter one relative URL per line. It can be the path of a node (e.g. !example1) or of any alias (e.g. !example2). However, it has to be the final URL, not a redirect (use the !link1 and !link2 modules).', array('!example1' => '<strong>node/[node:nid]</strong>', '!example2' => '<strong>my/path</strong>', '!link1' => l('Global Redirect', 'https://drupal.org/project/globalredirect'), '!link2' => l('Redirect', 'https://drupal.org/project/redirect'))) . '<br/>'
+      . t('If you want to match a path with any ending, add "|wildcard" to the end of the line (see !link1 for details). Example: !example1 will match !example1a, but also !example1b, !example1c, etc.', array('!link1' => l('function cache_clear_all', 'https://api.drupal.org/api/drupal/includes%21cache.inc/function/cache_clear_all/7'), '!example1' => '<strong>my/path|wildcard</strong>', '!example1a' => '<strong>my/path</strong>', '!example1b' => '<strong>my/path/one</strong>', '!example1c' => '<strong>my/path/two</strong>')) . '<br/>'
       . t('You may use tokens here.'),
     '#states' => array(
       'visible' => array(
@@ -224,10 +224,10 @@ function expire_admin_settings_form() {
 
   $form['tabs']['comment']['expire']['expire_comment_custom_pages'] = array(
     '#type' => 'textarea',
-    '#title' => t('Enter custom urls'),
-    '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>comment/[comment:cid]</strong>')) . '<br/>'
-      . t('If you want to use wildcard flush, add |wildcard to the end of the line. Example: !example', array('!example' => '<strong>comment/[comment:cid]|wildcard</strong>')) . '<br/>'
-      . t('You may use tokens here.'),
+    '#title' => t('Enter custom URLs'),
+    '#description' => t('Enter one relative URL per line, e.g. !example1.', array('!example1' => '<strong>comment/[comment:cid]</strong>')) . '<br/>'
+    . t('If you want to match a path with any ending, add "|wildcard" to the end of the line (see !link1 for details). Example: !example1 will match !example1a, but also !example1b, !example1c, etc.', array('!link1' => l('function cache_clear_all', 'https://api.drupal.org/api/drupal/includes%21cache.inc/function/cache_clear_all/7'), '!example1' => '<strong>comment/1</strong>', '!example1a' => '<strong>comment/1</strong>', '!example1b' => '<strong>comment/12</strong>', '!example1c' => '<strong>comment/123</strong>')) . '<br/>'
+    . t('You may use tokens here.'),
     '#states' => array(
       'visible' => array(
         ':input[name="expire_comment_custom"]' => array('checked' => TRUE),
@@ -287,10 +287,10 @@ function expire_admin_settings_form() {
 
   $form['tabs']['user']['expire']['expire_user_custom_pages'] = array(
     '#type' => 'textarea',
-    '#title' => t('Enter custom urls'),
-    '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>user/[user:uid]</strong>')) . '<br/>'
-      . t('If you want to use wildcard flush, add |wildcard to the end of the line. Example: !example', array('!example' => '<strong>user/[user:uid]|wildcard</strong>')) . '<br/>'
-      . t('You may use tokens here.'),
+    '#title' => t('Enter custom URLs'),
+    '#description' => t('Enter one relative URL per line. It can be the path of a node (e.g. !example1) or of any alias (e.g. !example2). However, it has to be the final URL, not a redirect (use the !link1 and !link2 modules).', array('!example1' => '<strong>user/[user:uid]</strong>', '!example2' => '<strong>my/path</strong>', '!link1' => l('Global Redirect', 'https://drupal.org/project/globalredirect'), '!link2' => l('Redirect', 'https://drupal.org/project/redirect'))) . '<br/>'
+    . t('If you want to match a path with any ending, add "|wildcard" to the end of the line (see !link1 for details). Example: !example1 will match !example1a, but also !example1b, !example1c, etc.', array('!link1' => l('function cache_clear_all', 'https://api.drupal.org/api/drupal/includes%21cache.inc/function/cache_clear_all/7'), '!example1' => '<strong>my/path|wildcard</strong>', '!example1a' => '<strong>my/path</strong>', '!example1b' => '<strong>my/path/one</strong>', '!example1c' => '<strong>my/path/two</strong>')) . '<br/>'
+    . t('You may use tokens here.'),
     '#states' => array(
       'visible' => array(
         ':input[name="expire_user_custom"]' => array('checked' => TRUE),
@@ -349,10 +349,10 @@ function expire_admin_settings_form() {
 
     $form['tabs']['file']['expire']['expire_file_custom_pages'] = array(
       '#type' => 'textarea',
-      '#title' => t('Enter custom urls'),
-      '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>file/[file:fid]</strong>')) . '<br/>'
-        . t('If you want to use wildcard flush, add |wildcard to the end of the line. Example: !example', array('!example' => '<strong>file/[file:fid]|wildcard</strong>')) . '<br/>'
-        . t('You may use tokens here.'),
+      '#title' => t('Enter custom URLs'),
+      '#description' => t('Enter one relative URL per line, e.g. !example1.', array('!example1' => '<strong>file/[file:fid]</strong>')) . '<br/>'
+      . t('If you want to match a path with any ending, add "|wildcard" to the end of the line (see !link1 for details). Example: !example1 will match !example1a, but also !example1b, !example1c, etc.', array('!link1' => l('function cache_clear_all', 'https://api.drupal.org/api/drupal/includes%21cache.inc/function/cache_clear_all/7'), '!example1' => '<strong>file/1</strong>', '!example1a' => '<strong>file/1</strong>', '!example1b' => '<strong>file/12</strong>', '!example1c' => '<strong>file/123</strong>')) . '<br/>'
+      . t('You may use tokens here.'),
       '#states' => array(
         'visible' => array(
           ':input[name="expire_file_custom"]' => array('checked' => TRUE),
@@ -413,10 +413,10 @@ function expire_admin_settings_form() {
 
     $form['tabs']['votingapi']['expire']['expire_votingapi_custom_pages'] = array(
       '#type' => 'textarea',
-      '#title' => t('Enter custom urls'),
-      '#description' => t('Enter every new url on a single line. Example: !example.', array('!example' => '<strong>user/[user:uid]</strong>')) . '<br/>'
-        . t('If you want to use wildcard flush, add |wildcard to the end of the line. Example: !example', array('!example' => '<strong>user/[user:uid]|wildcard</strong>')) . '<br/>'
-        . t('You may use tokens here.'),
+      '#title' => t('Enter custom URLs'),
+      '#description' => t('Enter one relative URL per line. It can be the path of a node (e.g. !example1) or of any alias (e.g. !example2). However, it has to be the final URL, not a redirect (use the !link1 and !link2 modules).', array('!example1' => '<strong>user/[user:uid]</strong>', '!example2' => '<strong>my/path</strong>', '!link1' => l('Global Redirect', 'https://drupal.org/project/globalredirect'), '!link2' => l('Redirect', 'https://drupal.org/project/redirect'))) . '<br/>'
+      . t('If you want to match a path with any ending, add "|wildcard" to the end of the line (see !link1 for details). Example: !example1 will match !example1a, but also !example1b, !example1c, etc.', array('!link1' => l('function cache_clear_all', 'https://api.drupal.org/api/drupal/includes%21cache.inc/function/cache_clear_all/7'), '!example1' => '<strong>my/path|wildcard</strong>', '!example1a' => '<strong>my/path</strong>', '!example1b' => '<strong>my/path/one</strong>', '!example1c' => '<strong>my/path/two</strong>')) . '<br/>'
+      . t('You may use tokens here.'),
       '#states' => array(
         'visible' => array(
           ':input[name="expire_votingapi_custom"]' => array('checked' => TRUE),
